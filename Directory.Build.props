@@ -1,45 +1,72 @@
 <Project>
 
-  <!-- Local quality gate: every project builds with warnings as errors and the
-       recommended analyzers + .editorconfig code style enforced, so problems fail
-       at the desk exactly like they fail in CI. -->
-  <PropertyGroup>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <AnalysisLevel>latest-recommended</AnalysisLevel>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <Deterministic>true</Deterministic>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <LangVersion>latest</LangVersion>
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
+   <!-- KofTwentyTwo .NET quality gate (standards: K22-CODE-CS, from
+        KofTwentyTwo/standards configs/dotnet). Every rule fails `dotnet build` locally
+        exactly as it fails in CI. -->
+   <PropertyGroup>
+      <Nullable>enable</Nullable>
+      <ImplicitUsings>enable</ImplicitUsings>
+      <LangVersion>latest</LangVersion>
+      <IsPackable>false</IsPackable>
 
-  <!-- Single version source for every package in the repo; they always release
-       together. Local builds are <prefix>-dev; release builds pass an explicit
-       -p:Version=<tag-version>, which overrides both parts. SourceLink appends the
-       git commit as "+<sha>" on AssemblyInformationalVersion. -->
-  <PropertyGroup>
-    <VersionPrefix>0.1.0</VersionPrefix>
-    <VersionSuffix>dev</VersionSuffix>
-  </PropertyGroup>
+      <!-- Warnings are errors; analyzers and .editorconfig style run in every build. -->
+      <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+      <MSBuildTreatWarningsAsErrors>true</MSBuildTreatWarningsAsErrors>
+      <AnalysisLevel>latest-recommended</AnalysisLevel>
+      <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+      <!-- Required for IDE0005 (unused usings) to run during build. CS1591 (missing XML
+           doc) stays on for packable projects and is silenced for everything else below. -->
+      <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
-  <!-- Package metadata shared by every packable project. -->
-  <PropertyGroup>
-    <Authors>James Maes</Authors>
-    <Copyright>Copyright (c) 2026 James Maes</Copyright>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/KofTwentyTwo/AppKit</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/KofTwentyTwo/AppKit</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>windows;desktop;winui;wpf;velopack</PackageTags>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-  </PropertyGroup>
+      <!-- Reproducible builds with source-linked symbols. -->
+      <Deterministic>true</Deterministic>
+      <EmbedUntrackedSources>true</EmbedUntrackedSources>
+      <PublishRepositoryUrl>true</PublishRepositoryUrl>
+      <IncludeSymbols>true</IncludeSymbols>
+      <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
-  <!-- Reproducible paths in CI-built packages (SourceLink maps them back to GitHub). -->
-  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-  </PropertyGroup>
+      <!-- Supply chain: audit direct AND transitive packages; pin the whole graph. -->
+      <NuGetAudit>true</NuGetAudit>
+      <NuGetAuditMode>all</NuGetAuditMode>
+      <NuGetAuditLevel>low</NuGetAuditLevel>
+      <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+      <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+   </PropertyGroup>
+
+   <!-- CI: normalized paths, and restore must match the committed lock files exactly. -->
+   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true' or '$(CI)' == 'true'">
+      <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+      <RestoreLockedMode>true</RestoreLockedMode>
+   </PropertyGroup>
+
+   <!-- Only shipped libraries must document their public API. -->
+   <PropertyGroup Condition="'$(IsPackable)' != 'true'">
+      <NoWarn>$(NoWarn);CS1591</NoWarn>
+   </PropertyGroup>
+
+   <ItemGroup>
+      <!-- Repository-wide analyzers; versions live in Directory.Packages.props. -->
+      <PackageReference Include="Meziantou.Analyzer" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers" />
+   </ItemGroup>
+
+   <!-- Single version source for every package in the repo; they always release
+        together. Local builds are <prefix>-dev; release builds pass an explicit
+        -p:Version=<tag-version>, which overrides both parts. SourceLink appends the
+        git commit as "+<sha>" on AssemblyInformationalVersion. -->
+   <PropertyGroup>
+      <VersionPrefix>0.1.0</VersionPrefix>
+      <VersionSuffix>dev</VersionSuffix>
+   </PropertyGroup>
+
+   <!-- Package metadata shared by every packable project. -->
+   <PropertyGroup>
+      <Authors>James Maes</Authors>
+      <Copyright>Copyright (c) 2026 James Maes (KofTwentyTwo)</Copyright>
+      <PackageLicenseExpression>MIT</PackageLicenseExpression>
+      <PackageProjectUrl>https://github.com/KofTwentyTwo/AppKit</PackageProjectUrl>
+      <RepositoryUrl>https://github.com/KofTwentyTwo/AppKit</RepositoryUrl>
+      <RepositoryType>git</RepositoryType>
+      <PackageTags>windows;desktop;winui;wpf;velopack</PackageTags>
+   </PropertyGroup>
 
 </Project>
