@@ -6,10 +6,9 @@ Pushing a protected `v*` tag on `main` runs [`.github/workflows/release.yml`](..
 which calls the shared `release-nuget.yml` workflow in KofTwentyTwo/standards. All four
 packages always release together under one version.
 
-> **Status:** the shared `release-nuget.yml` workflow is pinned to the
-> `feat/dotnet-workflows` branch of KofTwentyTwo/standards while that pull request is
-> under review. Repin `release.yml` (and `ci.yml`) to the merged commit before cutting
-> the first release.
+> **Status:** the shared workflows are pinned to a commit on KofTwentyTwo/standards
+> `main` while the standards are pre-release; they move to a release tag's commit once
+> KofTwentyTwo/standards publishes `v1.0.0` (Dependabot proposes the update).
 
 ## Versioning
 
