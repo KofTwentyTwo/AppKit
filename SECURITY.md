@@ -1,33 +1,53 @@
 # Security Policy
 
-## Supported versions
-
-Only the **latest release** of the AppKit packages receives security fixes. Apps built on
-AppKit pick up a fix by updating their package reference (Dependabot opens that PR).
-
 ## Reporting a vulnerability
 
-**Please do not open a public issue for security problems.**
+**Do not open a public issue for a security problem.**
 
-This repository has GitHub **private vulnerability reporting** enabled:
+Report it privately through GitHub's
+[private vulnerability reporting](https://github.com/KofTwentyTwo/AppKit/security/advisories/new)
+(the repository's **Security** tab, then **Report a vulnerability**). That is the only
+reporting channel.
 
-1. Go to the repository's [Security tab](https://github.com/KofTwentyTwo/AppKit/security).
-2. Click **Report a vulnerability**.
-3. Describe the issue, how to reproduce it, and the impact you see.
+Security contact: **James Maes** ([@KofTwentyTwo](https://github.com/KofTwentyTwo)),
+maintainer.
 
-That is the only reporting channel. AppKit is maintained by one person, so responses are
-best-effort: normally an acknowledgment within **7 days**.
+Please include the affected package and version, how to reproduce it, and the impact
+you see. AppKit's attack surface is described in its
+[threat model](docs/security/threat-model.md).
 
-## Security-relevant design
+## What to expect
 
-- **Secrets** (tokens, keys) are stored only through `ISecretVault`. The Windows
-  implementation uses the per-user Credential Manager (DPAPI-protected) and clears its
-  plaintext buffer after writing. Secrets never reach settings files or logs.
-- **Updates** come only from the app's own GitHub Releases over HTTPS via Velopack, and
-  each package's integrity is checked by Velopack before it is applied.
-- **Releases** of AppKit carry SLSA build-provenance attestations and a `SHA256SUMS` file.
-  Verify a package with:
+KofTwentyTwo follows coordinated vulnerability disclosure. Timeframes are counted
+from the day the report arrives and come from the
+[KofTwentyTwo security program](https://github.com/KofTwentyTwo/standards/blob/main/policies/security-program.md)
+(targets until the standards reach v1.0.0, commitments from then on):
 
-  ```powershell
-  gh attestation verify KofTwentyTwo.AppKit.<version>.nupkg --repo KofTwentyTwo/AppKit
-  ```
+| Step | Target |
+| --- | --- |
+| Acknowledge the report | 7 days |
+| Assess it: confirm or reject, with a severity | 14 days |
+| Release a fix for a CRITICAL vulnerability | 7 days |
+| Release a fix for a HIGH vulnerability | 30 days |
+| Release a fix for a MEDIUM vulnerability | 90 days |
+| Release a fix for a LOW vulnerability | The next release |
+| Publish the advisory (GitHub Security Advisory, CVE where applicable) | When the fix ships, or 90 days after the report, whichever comes first |
+
+Reporters are credited in the advisory unless they ask not to be.
+
+## Supported versions
+
+| Version | Security fixes |
+| --- | --- |
+| Latest minor release (`0.1.x` once published) | Yes |
+| Older | No; upgrade to the latest release |
+
+All four packages release together under one version. Only the latest minor release
+receives fixes; a line stops receiving security fixes when the next minor version is
+released. After a new major version, the previous major's last minor receives security
+fixes for 6 months.
+
+## Published vulnerabilities
+
+Fixed vulnerabilities are published as
+[GitHub Security Advisories](https://github.com/KofTwentyTwo/AppKit/security/advisories).
