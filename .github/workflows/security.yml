@@ -21,5 +21,5 @@ jobs:
   security:
     uses: KofTwentyTwo/standards/.github/workflows/security.yml@855cf4409180d2f1aa58a062c8c140be2ac27917 # main (pre-release)
     permissions:
-      contents: read
-      security-events: write
+      contents: read         # check out the code and its history
+      security-events: write # upload Trivy and zizmor SARIF to code scanning

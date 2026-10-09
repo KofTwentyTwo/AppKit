@@ -19,8 +19,8 @@ jobs:
   codeql:
     uses: KofTwentyTwo/standards/.github/workflows/codeql.yml@855cf4409180d2f1aa58a062c8c140be2ac27917 # main (pre-release)
     permissions:
-      contents: read
-      security-events: write
+      contents: read         # check out the code
+      security-events: write # upload CodeQL results to code scanning
     with:
       languages: '["csharp", "actions"]'
       build-mode: manual

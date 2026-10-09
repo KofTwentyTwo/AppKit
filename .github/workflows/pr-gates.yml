@@ -16,5 +16,5 @@ jobs:
   pr:
     uses: KofTwentyTwo/standards/.github/workflows/pr.yml@855cf4409180d2f1aa58a062c8c140be2ac27917 # main (pre-release)
     permissions:
-      contents: read
-      pull-requests: read
+      contents: read      # read the commits being merged
+      pull-requests: read # read the pull request title and dependency diff

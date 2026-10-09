@@ -22,6 +22,11 @@ on:
 
 permissions: {}
 
+# One release at a time, and never cancel one halfway through publishing.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
     uses: KofTwentyTwo/standards/.github/workflows/release-nuget.yml@58215c9fbcebd620f34194003db518560583b5b7 # feat/dotnet-workflows
