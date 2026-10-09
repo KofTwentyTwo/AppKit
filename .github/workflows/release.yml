@@ -1,0 +1,104 @@
+# Release pipeline, triggered by pushing a tag that starts with 'v'.
+#
+#   v1.2.3        -> stable GitHub release + nuget.org
+#   v1.2.3-beta.1 -> GitHub prerelease + nuget.org prerelease
+#
+# Every package is built once, attested (SLSA build provenance), attached to the
+# GitHub release with a SHA256SUMS file, then pushed to nuget.org when the
+# NUGET_API_KEY secret is configured. See docs/RELEASING.md.
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Build, attest, and publish
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write      # create the GitHub release and upload assets
+      id-token: write      # sign the provenance attestation (Sigstore OIDC)
+      attestations: write  # store the attestation on the repository
+    env:
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Derive version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          # Strict semver 2.0; build metadata ('+...') is rejected.
+          $semver = '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?$'
+          if ($tag -notmatch $semver) {
+            Write-Error "Tag '$tag' is not a release tag. Expected vMAJOR.MINOR.PATCH with an optional prerelease suffix, e.g. v1.2.3 or v1.2.3-beta.1."
+            exit 1
+          }
+          $version = $tag.Substring(1)
+          $prerelease = $version.Contains('-')
+          Write-Host "Tag: $tag | Version: $version | Prerelease: $prerelease"
+          Add-Content $env:GITHUB_OUTPUT "version=$version"
+          Add-Content $env:GITHUB_OUTPUT "prerelease=$($prerelease.ToString().ToLower())"
+
+      # The same gates as CI: a release can never ship what CI would reject.
+      - name: Build (x64, warnings as errors)
+        run: dotnet build AppKit.slnx -c Release -p:Platform=x64 -p:Version=${{ steps.version.outputs.version }} -warnaserror
+
+      - name: Unit tests with coverage
+        run: dotnet test tests/KofTwentyTwo.AppKit.Tests -c Release --no-build -p:Platform=x64 --settings coverage.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
+
+      - name: Enforce 100% line coverage
+        shell: pwsh
+        run: ./build/Assert-Coverage.ps1 -ResultsDirectory TestResults -Packages KofTwentyTwo.AppKit, KofTwentyTwo.AppKit.Updates
+
+      - name: Pack
+        run: dotnet pack AppKit.slnx -c Release --no-build -p:Platform=x64 -p:Version=${{ steps.version.outputs.version }} -o artifacts/nuget
+
+      - name: Checksums
+        shell: pwsh
+        run: |
+          Push-Location artifacts/nuget
+          Get-ChildItem -File | Sort-Object Name | ForEach-Object {
+            "{0}  {1}" -f (Get-FileHash $_.Name -Algorithm SHA256).Hash.ToLower(), $_.Name
+          } | Set-Content -Path SHA256SUMS -Encoding ascii
+          Get-Content SHA256SUMS
+          Pop-Location
+
+      # Anyone can verify a package came from this workflow at this tag:
+      #   gh attestation verify <file>.nupkg --repo KofTwentyTwo/AppKit
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: 'artifacts/nuget/*.nupkg'
+
+      # Releases are immutable once published, so everything lands on a draft first.
+      - name: Create draft release with packages
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $pre = @()
+          if ('${{ steps.version.outputs.prerelease }}' -eq 'true') { $pre = @('--prerelease') }
+          gh release create $env:GITHUB_REF_NAME --draft --verify-tag --title "AppKit ${{ steps.version.outputs.version }}" --generate-notes @pre (Get-ChildItem artifacts/nuget -File).FullName
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit $env:GITHUB_REF_NAME --draft=false
+
+      - name: Push to nuget.org
+        if: env.NUGET_API_KEY != ''
+        run: dotnet nuget push "artifacts/nuget/*.nupkg" --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate

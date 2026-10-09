@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Views are built in code, mirroring the WinUI package, so both packages expose the
+       same shapes and an app can switch frameworks without relearning AppKit. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <IsPackable>true</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>WPF shell pieces for KofTwentyTwo Windows apps: branded splash overlay, About window, live log viewer, crash safety net, Fluent theme switching, and the update-dialog adapter.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>$(PackageTags);fluent</PackageTags>
+    <!-- WPF0001: Application.ThemeMode (the Fluent theme) is marked experimental in
+         .NET 9/10. It is the supported way to get Windows 11 styling and light/dark
+         switching in WPF, and this package isolates the one call that uses it. -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KofTwentyTwo.AppKit\KofTwentyTwo.AppKit.csproj" />
+    <ProjectReference Include="..\KofTwentyTwo.AppKit.Updates\KofTwentyTwo.AppKit.Updates.csproj" />
+  </ItemGroup>
+
+</Project>

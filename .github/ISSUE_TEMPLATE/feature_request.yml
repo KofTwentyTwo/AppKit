@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest something every KofTwentyTwo app should get from AppKit
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Which apps need it, and what do they do today instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API or behavior
+    validations:
+      required: true
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Which package?
+      options:
+        - KofTwentyTwo.AppKit
+        - KofTwentyTwo.AppKit.Updates
+        - KofTwentyTwo.AppKit.WinUI
+        - KofTwentyTwo.AppKit.Wpf
+        - New package
+        - Not sure
+    validations:
+      required: false

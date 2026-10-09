@@ -1,0 +1,47 @@
+name: Bug report
+description: Something in an AppKit package is broken
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: AppKit version
+      placeholder: "e.g. 0.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      options:
+        - KofTwentyTwo.AppKit
+        - KofTwentyTwo.AppKit.Updates
+        - KofTwentyTwo.AppKit.WinUI
+        - KofTwentyTwo.AppKit.Wpf
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened, and what did you expect?
+      description: Include any exact error message or stack trace.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Ideally against one of the sample apps in `samples/`.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Windows version (`winver`), packaged (MSIX) or unpackaged (Velopack), and the host app if relevant.
+    validations:
+      required: false

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>Velopack self-update for KofTwentyTwo Windows apps: startup hook handling, a never-throwing update service fed by GitHub Releases with stable/dev channel selection, and the framework-free "check for updates" dialog flow.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="KofTwentyTwo.AppKit.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Velopack" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KofTwentyTwo.AppKit\KofTwentyTwo.AppKit.csproj" />
+  </ItemGroup>
+
+</Project>

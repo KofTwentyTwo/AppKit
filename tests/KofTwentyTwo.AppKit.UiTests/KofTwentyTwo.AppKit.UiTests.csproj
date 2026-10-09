@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Out-of-process UI smoke tests: FlaUI drives the built sample apps over UI
+       Automation, so this project deliberately has NO ProjectReference to them. Build
+       the solution first (dotnet build AppKit.slnx -p:Platform=x64), or point
+       APPKIT_UITEST_WINUI_EXE / APPKIT_UITEST_WPF_EXE at the exes to test. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FlaUI.UIA3" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

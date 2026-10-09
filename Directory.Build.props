@@ -1,0 +1,45 @@
+<Project>
+
+  <!-- Local quality gate: every project builds with warnings as errors and the
+       recommended analyzers + .editorconfig code style enforced, so problems fail
+       at the desk exactly like they fail in CI. -->
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <Deterministic>true</Deterministic>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- Single version source for every package in the repo; they always release
+       together. Local builds are <prefix>-dev; release builds pass an explicit
+       -p:Version=<tag-version>, which overrides both parts. SourceLink appends the
+       git commit as "+<sha>" on AssemblyInformationalVersion. -->
+  <PropertyGroup>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionSuffix>dev</VersionSuffix>
+  </PropertyGroup>
+
+  <!-- Package metadata shared by every packable project. -->
+  <PropertyGroup>
+    <Authors>James Maes</Authors>
+    <Copyright>Copyright (c) 2026 James Maes</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/KofTwentyTwo/AppKit</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/KofTwentyTwo/AppKit</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>windows;desktop;winui;wpf;velopack</PackageTags>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+  </PropertyGroup>
+
+  <!-- Reproducible paths in CI-built packages (SourceLink maps them back to GitHub). -->
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+</Project>
