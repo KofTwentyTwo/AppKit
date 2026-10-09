@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 James Maes (KofTwentyTwo)
+ * SPDX-License-Identifier: MIT
+ */
+
 namespace KofTwentyTwo.AppKit.Interaction;
 
 /// <summary>
@@ -7,12 +12,14 @@ namespace KofTwentyTwo.AppKit.Interaction;
 /// </summary>
 public interface IUserPrompter
 {
-    /// <summary>Shows an informational message with a single dismiss button.</summary>
-    Task ShowMessageAsync(string title, string message);
+   /// <summary>Shows an informational message with a single dismiss button.</summary>
+   Task ShowMessageAsync(string title, string message);
 
-    /// <summary>
-    /// Asks a yes/no question. True only when the user chose
-    /// <paramref name="confirmText"/>; dismissing or a suppressed dialog is false.
-    /// </summary>
-    Task<bool> ConfirmAsync(string title, string message, string confirmText, string cancelText);
+
+
+   /// <summary>
+   /// Asks a yes/no question. True only when the user chose
+   /// <paramref name="confirmText"/>; dismissing or a suppressed dialog is false.
+   /// </summary>
+   Task<bool> ConfirmAsync(string title, string message, string confirmText, string cancelText);
 }

@@ -1,26 +1,12 @@
+/*
+ * Copyright (c) 2026 James Maes (KofTwentyTwo)
+ * SPDX-License-Identifier: MIT
+ */
+
 using System.Reflection;
 
+
 namespace KofTwentyTwo.AppKit.Updates;
-
-/// <summary>
-/// The narrow slice of Velopack the update service uses, so the guarding and state
-/// logic is testable without an installed app or the network.
-/// </summary>
-internal interface IUpdateBackend
-{
-    bool IsInstalled { get; }
-
-    string? CurrentVersion { get; }
-
-    /// <summary>The newer version found (and remembered for download), or null.</summary>
-    Task<string?> CheckAsync();
-
-    /// <summary>Downloads the remembered update.</summary>
-    Task DownloadAsync(Action<int>? progress, CancellationToken cancellationToken);
-
-    /// <summary>Applies the downloaded update and restarts; exits the process on success.</summary>
-    void ApplyAndRestart();
-}
 
 /// <summary>
 /// Self-update via Velopack with releases hosted on the app's public GitHub repository.
@@ -31,106 +17,122 @@ internal interface IUpdateBackend
 /// </summary>
 public sealed class VelopackUpdateService : IUpdateService
 {
-    private readonly Func<IUpdateBackend> _createBackend;
-    private IUpdateBackend? _backend;
-    private bool _updateReady;
+   private readonly Func<IUpdateBackend> _createBackend;
+   private IUpdateBackend? _backend;
+   private bool _updateReady;
 
-    /// <summary>
-    /// Updates from <paramref name="repositoryUrl"/>'s GitHub Releases, following the
-    /// dev channel when the entry assembly is a prerelease build.
-    /// </summary>
-    public VelopackUpdateService(Uri repositoryUrl)
-        : this(repositoryUrl, Assembly.GetEntryAssembly() is { } entry && BuildVersion.IsPrerelease(entry))
-    {
-    }
 
-    /// <summary>Updates from <paramref name="repositoryUrl"/>'s GitHub Releases.</summary>
-    /// <param name="repositoryUrl">The public GitHub repository, e.g. https://github.com/KofTwentyTwo/gclo.</param>
-    /// <param name="includePrereleases">Whether GitHub prereleases (the dev channel) are considered.</param>
-    public VelopackUpdateService(Uri repositoryUrl, bool includePrereleases)
-        : this(() => new VelopackGithubBackend(repositoryUrl, includePrereleases))
-    {
-        ArgumentNullException.ThrowIfNull(repositoryUrl);
-    }
 
-    /// <summary>Test seam. The backend is created lazily so constructing the service can never fail.</summary>
-    internal VelopackUpdateService(Func<IUpdateBackend> createBackend)
-    {
-        _createBackend = createBackend;
-    }
+   /// <summary>
+   /// Updates from <paramref name="repositoryUrl"/>'s GitHub Releases, following the
+   /// dev channel when the entry assembly is a prerelease build.
+   /// </summary>
+   public VelopackUpdateService(Uri repositoryUrl)
+       : this(repositoryUrl, Assembly.GetEntryAssembly() is { } entry && BuildVersion.IsPrerelease(entry))
+   {
+   }
 
-    /// <inheritdoc/>
-    public bool IsSupported
-    {
-        get
-        {
-            try
-            {
-                return Backend.IsInstalled;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-    }
 
-    /// <inheritdoc/>
-    public string? CurrentVersion
-    {
-        get
-        {
-            try
-            {
-                return Backend.CurrentVersion;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-    }
 
-    private IUpdateBackend Backend => _backend ??= _createBackend();
+   /// <summary>Updates from <paramref name="repositoryUrl"/>'s GitHub Releases.</summary>
+   /// <param name="repositoryUrl">The public GitHub repository, e.g. https://github.com/KofTwentyTwo/gclo.</param>
+   /// <param name="includePrereleases">Whether GitHub prereleases (the dev channel) are considered.</param>
+   public VelopackUpdateService(Uri repositoryUrl, bool includePrereleases)
+       : this(() => new VelopackGithubBackend(repositoryUrl, includePrereleases))
+   {
+      ArgumentNullException.ThrowIfNull(repositoryUrl);
+   }
 
-    /// <inheritdoc/>
-    public async Task<UpdateCheckResult> CheckAsync(CancellationToken cancellationToken = default)
-    {
-        _updateReady = false;
-        try
-        {
-            if (!Backend.IsInstalled)
-            {
-                return UpdateCheckResult.Failed(UpdateText.NotSupported);
-            }
 
-            string? version = await Backend.CheckAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
-            _updateReady = version is not null;
-            return version is null ? UpdateCheckResult.UpToDate : UpdateCheckResult.Available(version);
-        }
-        catch (Exception ex)
-        {
-            return UpdateCheckResult.Failed(ex.Message);
-        }
-    }
 
-    /// <inheritdoc/>
-    public async Task<string?> DownloadAndApplyAsync(IProgress<int>? progress = null, CancellationToken cancellationToken = default)
-    {
-        if (!_updateReady || _backend is null)
-        {
-            return "No update is ready to install; check for updates first.";
-        }
+   /// <summary>Test seam. The backend is created lazily so constructing the service can never fail.</summary>
+   internal VelopackUpdateService(Func<IUpdateBackend> createBackend)
+   {
+      _createBackend = createBackend;
+   }
 
-        try
-        {
-            await _backend.DownloadAsync(progress is null ? null : progress.Report, cancellationToken).ConfigureAwait(false);
-            _backend.ApplyAndRestart();
+
+
+   /// <inheritdoc/>
+   public bool IsSupported
+   {
+      get
+      {
+         try
+         {
+            return Backend.IsInstalled;
+         }
+         catch
+         {
+            return false;
+         }
+      }
+   }
+
+
+
+   /// <inheritdoc/>
+   public string? CurrentVersion
+   {
+      get
+      {
+         try
+         {
+            return Backend.CurrentVersion;
+         }
+         catch
+         {
             return null;
-        }
-        catch (Exception ex)
-        {
-            return ex.Message;
-        }
-    }
+         }
+      }
+   }
+
+
+
+   private IUpdateBackend Backend => _backend ??= _createBackend();
+
+
+
+   /// <inheritdoc/>
+   public async Task<UpdateCheckResult> CheckAsync(CancellationToken cancellationToken = default)
+   {
+      _updateReady = false;
+      try
+      {
+         if(!Backend.IsInstalled)
+         {
+            return UpdateCheckResult.Failed(UpdateText.NotSupported);
+         }
+
+         string? version = await Backend.CheckAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
+         _updateReady = version is not null;
+         return version is null ? UpdateCheckResult.UpToDate : UpdateCheckResult.Available(version);
+      }
+      catch(Exception ex)
+      {
+         return UpdateCheckResult.Failed(ex.Message);
+      }
+   }
+
+
+
+   /// <inheritdoc/>
+   public async Task<string?> DownloadAndApplyAsync(IProgress<int>? progress = null, CancellationToken cancellationToken = default)
+   {
+      if(!_updateReady || _backend is null)
+      {
+         return "No update is ready to install; check for updates first.";
+      }
+
+      try
+      {
+         await _backend.DownloadAsync(progress is null ? null : progress.Report, cancellationToken).ConfigureAwait(false);
+         _backend.ApplyAndRestart();
+         return null;
+      }
+      catch(Exception ex)
+      {
+         return ex.Message;
+      }
+   }
 }

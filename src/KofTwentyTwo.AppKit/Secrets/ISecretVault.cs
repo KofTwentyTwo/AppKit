@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 James Maes (KofTwentyTwo)
+ * SPDX-License-Identifier: MIT
+ */
+
 namespace KofTwentyTwo.AppKit.Secrets;
 
 /// <summary>
@@ -8,16 +13,20 @@ namespace KofTwentyTwo.AppKit.Secrets;
 /// </summary>
 public interface ISecretVault
 {
-    /// <summary>
-    /// Stores the secret under <paramref name="key"/>, overwriting any existing entry.
-    /// Throws on failure: silently losing a secret would leave the user stuck without
-    /// any warning.
-    /// </summary>
-    void Store(string key, string secret);
+   /// <summary>
+   /// Stores the secret under <paramref name="key"/>, overwriting any existing entry.
+   /// Throws on failure: silently losing a secret would leave the user stuck without
+   /// any warning.
+   /// </summary>
+   void Store(string key, string secret);
 
-    /// <summary>The stored secret, or null when the vault has no entry for the key.</summary>
-    string? TryRetrieve(string key);
 
-    /// <summary>Removes the key's secret. Deleting an absent entry is a no-op.</summary>
-    void Delete(string key);
+
+   /// <summary>The stored secret, or null when the vault has no entry for the key.</summary>
+   string? TryRetrieve(string key);
+
+
+
+   /// <summary>Removes the key's secret. Deleting an absent entry is a no-op.</summary>
+   void Delete(string key);
 }

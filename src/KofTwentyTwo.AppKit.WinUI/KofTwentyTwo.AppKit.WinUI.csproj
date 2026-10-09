@@ -1,34 +1,34 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Views are built in code, not XAML: a XAML library's compiled resources (.xbf/.pri)
-       must be merged into the host app, which is fragile for unpackaged (Velopack) apps.
-       Code-built UI ships as a plain assembly and just works, packaged or not. -->
-  <PropertyGroup>
-    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
-    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <UseWinUI>true</UseWinUI>
-    <!-- LibraryImport (GetDpiForWindow) generates unsafe marshalling stubs. -->
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <IsPackable>true</IsPackable>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Description>WinUI 3 shell pieces for KofTwentyTwo Windows apps: branded splash overlay, About dialog, live log viewer, crash safety net, single-dialog guard, theme and window helpers, and the update-dialog adapter. Built in code, so it works in packaged and unpackaged (Velopack) apps alike.</Description>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageTags>$(PackageTags);winui3;windowsappsdk</PackageTags>
-  </PropertyGroup>
+   <!-- Views are built in code, not XAML: a XAML library's compiled resources (.xbf/.pri)
+        must be merged into the host app, which is fragile for unpackaged (Velopack) apps.
+        Code-built UI ships as a plain assembly and just works, packaged or not. -->
+   <PropertyGroup>
+      <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+      <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+      <UseWinUI>true</UseWinUI>
+      <!-- LibraryImport (GetDpiForWindow) generates unsafe marshalling stubs. -->
+      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+      <IsPackable>true</IsPackable>
+      <GenerateDocumentationFile>true</GenerateDocumentationFile>
+      <Description>WinUI 3 shell pieces for KofTwentyTwo Windows apps: branded splash overlay, About dialog, live log viewer, crash safety net, single-dialog guard, theme and window helpers, and the update-dialog adapter. Built in code, so it works in packaged and unpackaged (Velopack) apps alike.</Description>
+      <PackageReadmeFile>README.md</PackageReadmeFile>
+      <PackageTags>$(PackageTags);winui3;windowsappsdk</PackageTags>
+   </PropertyGroup>
 
-  <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="\" />
-  </ItemGroup>
+   <ItemGroup>
+      <None Include="README.md" Pack="true" PackagePath="\" />
+   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.WindowsAppSDK" />
-    <!-- Build-time only: it must not flow to consumers as a package dependency. -->
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" PrivateAssets="all" />
-  </ItemGroup>
+   <ItemGroup>
+      <PackageReference Include="Microsoft.WindowsAppSDK" />
+      <!-- Build-time only: it must not flow to consumers as a package dependency. -->
+      <PackageReference Include="Microsoft.Windows.SDK.BuildTools" PrivateAssets="all" />
+   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\KofTwentyTwo.AppKit\KofTwentyTwo.AppKit.csproj" />
-    <ProjectReference Include="..\KofTwentyTwo.AppKit.Updates\KofTwentyTwo.AppKit.Updates.csproj" />
-  </ItemGroup>
+   <ItemGroup>
+      <ProjectReference Include="..\KofTwentyTwo.AppKit\KofTwentyTwo.AppKit.csproj" />
+      <ProjectReference Include="..\KofTwentyTwo.AppKit.Updates\KofTwentyTwo.AppKit.Updates.csproj" />
+   </ItemGroup>
 
 </Project>

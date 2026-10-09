@@ -1,26 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- WPF sample: the runtime proof for the WPF package. No App.xaml: Program.Main must
-       run Velopack's hooks before the Application exists, and the Fluent theme needs no
-       resource dictionary when set through Application.ThemeMode. -->
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <UseWPF>true</UseWPF>
-    <RootNamespace>AppKit.Sample.Wpf</RootNamespace>
-    <AssemblyName>AppKitSample.Wpf</AssemblyName>
-    <ApplicationIcon>..\Shared\Brand\app.ico</ApplicationIcon>
-    <StartupObject>AppKit.Sample.Wpf.Program</StartupObject>
-    <NoWarn>$(NoWarn);WPF0001</NoWarn>
-  </PropertyGroup>
+   <!-- WPF sample: the runtime proof for the WPF package. No App.xaml: Program.Main must
+        run Velopack's hooks before the Application exists, and the Fluent theme needs no
+        resource dictionary when set through Application.ThemeMode. -->
+   <PropertyGroup>
+      <OutputType>WinExe</OutputType>
+      <TargetFramework>net10.0-windows</TargetFramework>
+      <UseWPF>true</UseWPF>
+      <RootNamespace>AppKit.Sample.Wpf</RootNamespace>
+      <AssemblyName>AppKitSample.Wpf</AssemblyName>
+      <ApplicationIcon>..\Shared\Brand\app.ico</ApplicationIcon>
+      <StartupObject>AppKit.Sample.Wpf.Program</StartupObject>
+      <NoWarn>$(NoWarn);WPF0001</NoWarn>
+   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="..\Shared\SampleApp.cs" Link="SampleApp.cs" />
-    <Content Include="..\Shared\Brand\app.ico" Link="Assets\Brand\app.ico" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
+   <ItemGroup>
+      <Compile Include="..\Shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+      <Content Include="..\Shared\Brand\app.ico" Link="Assets\Brand\app.ico" CopyToOutputDirectory="PreserveNewest" />
+   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\KofTwentyTwo.AppKit.Wpf\KofTwentyTwo.AppKit.Wpf.csproj" />
-  </ItemGroup>
+   <ItemGroup>
+      <ProjectReference Include="..\..\src\KofTwentyTwo.AppKit.Wpf\KofTwentyTwo.AppKit.Wpf.csproj" />
+   </ItemGroup>
 
 </Project>

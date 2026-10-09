@@ -1,18 +1,23 @@
-<!-- PRs target the `dev` branch (see CONTRIBUTING.md). -->
+<!-- Title: a Conventional Commit header, e.g. "fix(sync): retry on transient network errors". -->
 
 ## What
 
-<!-- What does this PR change? -->
+<!-- What changes, in a sentence or two. -->
 
 ## Why
 
-<!-- Why is it needed? Link the issue, e.g. "Fixes #12". -->
+<!-- The problem or issue. "Fixes #123" closes the issue on merge. -->
+
+## How it was tested
+
+<!-- Tests added or changed, manual checks, screenshots for UI changes. -->
 
 ## Checklist
 
-- [ ] `dotnet build AppKit.slnx -p:Platform=x64 -warnaserror` succeeds with **0 warnings**
-- [ ] Unit tests pass and coverage of `KofTwentyTwo.AppKit` / `KofTwentyTwo.AppKit.Updates` is still **100%**
-- [ ] UI changes have the same shape in WinUI **and** WPF, with a UI test in both samples
-- [ ] `dotnet format AppKit.slnx --verify-no-changes --severity error` is clean
-- [ ] Public API changes are intentional; breaking changes are called out for a major bump
-- [ ] Docs updated (`README.md`, package READMEs) if behavior changed
+- [ ] Commits are signed and signed off (`git commit -S -s`)
+- [ ] Zero build warnings; format and lint are clean
+- [ ] Tests added or updated; the coverage gate still passes
+- [ ] Docs updated for user-visible changes
+- [ ] No secrets, credentials, or personal data
+- [ ] New dependencies are justified below, or none were added
+- [ ] Substantial AI assistance, if any, is noted here
