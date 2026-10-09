@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 James Maes (KofTwentyTwo)
+ * SPDX-License-Identifier: MIT
+ */
+
 using KofTwentyTwo.AppKit.Interaction;
 using KofTwentyTwo.AppKit.Logging;
 using KofTwentyTwo.AppKit.Updates;

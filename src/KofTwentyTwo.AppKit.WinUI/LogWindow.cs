@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 James Maes (KofTwentyTwo)
+ * SPDX-License-Identifier: MIT
+ */
+
 using KofTwentyTwo.AppKit.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;

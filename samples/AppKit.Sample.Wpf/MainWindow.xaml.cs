@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 James Maes (KofTwentyTwo)
+ * SPDX-License-Identifier: MIT
+ */
+
 using System.Windows;
 using System.Windows.Controls;
 using KofTwentyTwo.AppKit.Updates;

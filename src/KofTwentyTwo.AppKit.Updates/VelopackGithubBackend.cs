@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 James Maes (KofTwentyTwo)
+ * SPDX-License-Identifier: MIT
+ */
+
 using System.Diagnostics.CodeAnalysis;
 using Velopack;
 using Velopack.Sources;

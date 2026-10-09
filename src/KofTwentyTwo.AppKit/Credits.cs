@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 James Maes (KofTwentyTwo)
+ * SPDX-License-Identifier: MIT
+ */
+
 namespace KofTwentyTwo.AppKit;
 
 /// <summary>Credit and link text for the splash and About screens, shared by every UI package.</summary>
