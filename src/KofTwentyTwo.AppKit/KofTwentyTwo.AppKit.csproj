@@ -1,19 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <IsPackable>true</IsPackable>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Description>UI-framework-free foundation for KofTwentyTwo Windows apps: app identity, per-user data paths, build version display, crash-safe file logging, JSON settings, Windows Credential Manager secret storage, and the user-prompt seam the UI packages implement.</Description>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-  </PropertyGroup>
+   <PropertyGroup>
+      <TargetFramework>net10.0</TargetFramework>
+      <IsPackable>true</IsPackable>
+      <GenerateDocumentationFile>true</GenerateDocumentationFile>
+      <Description>UI-framework-free foundation for KofTwentyTwo Windows apps: app identity, per-user data paths, build version display, crash-safe file logging, JSON settings, Windows Credential Manager secret storage, and the user-prompt seam the UI packages implement.</Description>
+      <PackageReadmeFile>README.md</PackageReadmeFile>
+   </PropertyGroup>
 
-  <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="\" />
-  </ItemGroup>
+   <ItemGroup>
+      <None Include="README.md" Pack="true" PackagePath="\" />
+   </ItemGroup>
 
-  <ItemGroup>
-    <InternalsVisibleTo Include="KofTwentyTwo.AppKit.Tests" />
-  </ItemGroup>
+   <ItemGroup>
+      <InternalsVisibleTo Include="KofTwentyTwo.AppKit.Tests" />
+   </ItemGroup>
 
 </Project>

@@ -1,38 +1,38 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Unpackaged, self-contained WinUI 3 app: the shape Velopack ships. The sample is
-       the runtime proof for the WinUI package and the UI smoke tests' target. -->
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
-    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <RootNamespace>AppKit.Sample.WinUI</RootNamespace>
-    <AssemblyName>AppKitSample.WinUI</AssemblyName>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>..\Shared\Brand\app.ico</ApplicationIcon>
-    <Platforms>x86;x64;ARM64</Platforms>
-    <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
-    <UseWinUI>true</UseWinUI>
-    <WindowsPackageType>None</WindowsPackageType>
-    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
-    <!-- Velopack must run before any XAML starts, so the app supplies its own Main (Program.cs). -->
-    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
-  </PropertyGroup>
+   <!-- Unpackaged, self-contained WinUI 3 app: the shape Velopack ships. The sample is
+        the runtime proof for the WinUI package and the UI smoke tests' target. -->
+   <PropertyGroup>
+      <OutputType>WinExe</OutputType>
+      <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+      <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+      <RootNamespace>AppKit.Sample.WinUI</RootNamespace>
+      <AssemblyName>AppKitSample.WinUI</AssemblyName>
+      <ApplicationManifest>app.manifest</ApplicationManifest>
+      <ApplicationIcon>..\Shared\Brand\app.ico</ApplicationIcon>
+      <Platforms>x86;x64;ARM64</Platforms>
+      <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+      <UseWinUI>true</UseWinUI>
+      <WindowsPackageType>None</WindowsPackageType>
+      <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+      <!-- Velopack must run before any XAML starts, so the app supplies its own Main (Program.cs). -->
+      <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="..\Shared\SampleApp.cs" Link="SampleApp.cs" />
-    <Content Include="..\Shared\Brand\app-icon.svg" Link="Assets\Brand\app-icon.svg" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="..\Shared\Brand\app.ico" Link="Assets\Brand\app.ico" CopyToOutputDirectory="PreserveNewest" />
-    <Manifest Include="$(ApplicationManifest)" />
-  </ItemGroup>
+   <ItemGroup>
+      <Compile Include="..\Shared\SampleApp.cs" Link="SampleApp.cs" />
+      <Content Include="..\Shared\Brand\app-icon.svg" Link="Assets\Brand\app-icon.svg" CopyToOutputDirectory="PreserveNewest" />
+      <Content Include="..\Shared\Brand\app.ico" Link="Assets\Brand\app.ico" CopyToOutputDirectory="PreserveNewest" />
+      <Manifest Include="$(ApplicationManifest)" />
+   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.WindowsAppSDK" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
-  </ItemGroup>
+   <ItemGroup>
+      <PackageReference Include="Microsoft.WindowsAppSDK" />
+      <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
+   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\KofTwentyTwo.AppKit.WinUI\KofTwentyTwo.AppKit.WinUI.csproj" />
-  </ItemGroup>
+   <ItemGroup>
+      <ProjectReference Include="..\..\src\KofTwentyTwo.AppKit.WinUI\KofTwentyTwo.AppKit.WinUI.csproj" />
+   </ItemGroup>
 
 </Project>

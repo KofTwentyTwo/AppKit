@@ -1,28 +1,28 @@
 <Solution>
-  <Configurations>
-    <Platform Name="ARM64" />
-    <Platform Name="x64" />
-    <Platform Name="x86" />
-  </Configurations>
-  <Folder Name="/src/">
-    <Project Path="src/KofTwentyTwo.AppKit/KofTwentyTwo.AppKit.csproj" />
-    <Project Path="src/KofTwentyTwo.AppKit.Updates/KofTwentyTwo.AppKit.Updates.csproj" />
-    <Project Path="src/KofTwentyTwo.AppKit.WinUI/KofTwentyTwo.AppKit.WinUI.csproj" />
-    <Project Path="src/KofTwentyTwo.AppKit.Wpf/KofTwentyTwo.AppKit.Wpf.csproj" />
-  </Folder>
-  <Folder Name="/samples/">
-    <Project Path="samples/AppKit.Sample.WinUI/AppKit.Sample.WinUI.csproj">
-      <Platform Solution="*|ARM64" Project="ARM64" />
-      <Platform Solution="*|x64" Project="x64" />
-      <Platform Solution="*|x86" Project="x86" />
-    </Project>
-    <Project Path="samples/AppKit.Sample.Wpf/AppKit.Sample.Wpf.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/KofTwentyTwo.AppKit.Tests/KofTwentyTwo.AppKit.Tests.csproj" />
-    <Project Path="tests/KofTwentyTwo.AppKit.UiTests/KofTwentyTwo.AppKit.UiTests.csproj" />
-  </Folder>
-  <Folder Name="/tools/">
-    <Project Path="tools/BrandTool/BrandTool.csproj" />
-  </Folder>
+   <Configurations>
+      <Platform Name="ARM64" />
+      <Platform Name="x64" />
+      <Platform Name="x86" />
+   </Configurations>
+   <Folder Name="/src/">
+      <Project Path="src/KofTwentyTwo.AppKit/KofTwentyTwo.AppKit.csproj" />
+      <Project Path="src/KofTwentyTwo.AppKit.Updates/KofTwentyTwo.AppKit.Updates.csproj" />
+      <Project Path="src/KofTwentyTwo.AppKit.WinUI/KofTwentyTwo.AppKit.WinUI.csproj" />
+      <Project Path="src/KofTwentyTwo.AppKit.Wpf/KofTwentyTwo.AppKit.Wpf.csproj" />
+   </Folder>
+   <Folder Name="/samples/">
+      <Project Path="samples/AppKit.Sample.WinUI/AppKit.Sample.WinUI.csproj">
+         <Platform Solution="*|ARM64" Project="ARM64" />
+         <Platform Solution="*|x64" Project="x64" />
+         <Platform Solution="*|x86" Project="x86" />
+      </Project>
+      <Project Path="samples/AppKit.Sample.Wpf/AppKit.Sample.Wpf.csproj" />
+   </Folder>
+   <Folder Name="/tests/">
+      <Project Path="tests/KofTwentyTwo.AppKit.Tests/KofTwentyTwo.AppKit.Tests.csproj" />
+      <Project Path="tests/KofTwentyTwo.AppKit.UiTests/KofTwentyTwo.AppKit.UiTests.csproj" />
+   </Folder>
+   <Folder Name="/tools/">
+      <Project Path="tools/BrandTool/BrandTool.csproj" />
+   </Folder>
 </Solution>

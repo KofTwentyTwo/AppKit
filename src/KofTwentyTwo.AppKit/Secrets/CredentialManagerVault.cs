@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
 
+
 namespace KofTwentyTwo.AppKit.Secrets;
 
 /// <summary>
@@ -16,152 +17,178 @@ namespace KofTwentyTwo.AppKit.Secrets;
 [SupportedOSPlatform("windows")]
 public sealed class CredentialManagerVault : ISecretVault
 {
-    private const uint CredTypeGeneric = 1;         // CRED_TYPE_GENERIC
-    private const uint CredPersistLocalMachine = 2; // CRED_PERSIST_LOCAL_MACHINE: per-user, survives reboot
-    private const int ErrorNotFound = 1168;         // ERROR_NOT_FOUND
+   private const uint CredTypeGeneric = 1;         // CRED_TYPE_GENERIC
+   private const uint CredPersistLocalMachine = 2; // CRED_PERSIST_LOCAL_MACHINE: per-user, survives reboot
+   private const int ErrorNotFound = 1168;         // ERROR_NOT_FOUND
 
-    private readonly string _prefix;
+   private readonly string _prefix;
 
-    /// <summary>Creates a vault whose entries are named "&lt;targetPrefix&gt;:&lt;key&gt;".</summary>
-    /// <param name="targetPrefix">Normally the app id, so each app's entries are grouped and distinct.</param>
-    public CredentialManagerVault(string targetPrefix)
-        : this(targetPrefix, OperatingSystem.IsWindows())
-    {
-    }
 
-    /// <summary>Test seam: the platform check is a parameter so both arms are coverable.</summary>
-    internal CredentialManagerVault(string targetPrefix, bool isWindows)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(targetPrefix);
-        if (!isWindows)
-        {
-            throw new PlatformNotSupportedException("Secret storage requires the Windows Credential Manager.");
-        }
-        _prefix = targetPrefix;
-    }
 
-    /// <summary>The Credential Manager target name used for <paramref name="key"/>.</summary>
-    public string TargetName(string key)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(key);
-        return $"{_prefix}:{key}";
-    }
+   /// <summary>Creates a vault whose entries are named "&lt;targetPrefix&gt;:&lt;key&gt;".</summary>
+   /// <param name="targetPrefix">Normally the app id, so each app's entries are grouped and distinct.</param>
+   public CredentialManagerVault(string targetPrefix)
+       : this(targetPrefix, OperatingSystem.IsWindows())
+   {
+   }
 
-    /// <inheritdoc/>
-    public void Store(string key, string secret)
-    {
-        ArgumentNullException.ThrowIfNull(secret);
-        string target = TargetName(key);
 
-        byte[] blob = Encoding.Unicode.GetBytes(secret);
-        var pinned = GCHandle.Alloc(blob, GCHandleType.Pinned);
-        try
-        {
-            var credential = new CredentialW
-            {
-                Type = CredTypeGeneric,
-                TargetName = target,
-                CredentialBlobSize = (uint)blob.Length,
-                CredentialBlob = pinned.AddrOfPinnedObject(),
-                Persist = CredPersistLocalMachine,
-                UserName = _prefix,
-            };
 
-            if (!CredWriteW(ref credential, 0))
-            {
-                int error = Marshal.GetLastWin32Error();
-                throw new Win32Exception(error, $"CredWriteW failed (error {error}) storing secret '{key}'.");
-            }
-        }
-        finally
-        {
-            // The array is pinned, so the GC cannot have copied it elsewhere: clearing
-            // it removes the one deterministic plaintext copy of the secret from the
-            // heap (crash dumps, pagefile) before unpinning.
-            Array.Clear(blob);
-            pinned.Free();
-        }
-    }
+   /// <summary>Test seam: the platform check is a parameter so both arms are coverable.</summary>
+   internal CredentialManagerVault(string targetPrefix, bool isWindows)
+   {
+      ArgumentException.ThrowIfNullOrWhiteSpace(targetPrefix);
+      if(!isWindows)
+      {
+         throw new PlatformNotSupportedException("Secret storage requires the Windows Credential Manager.");
+      }
+      _prefix = targetPrefix;
+   }
 
-    /// <inheritdoc/>
-    public string? TryRetrieve(string key) => TryRetrieveTarget(TargetName(key), key);
 
-    /// <summary>Test seam: an invalid target name makes the non-not-found error arm coverable.</summary>
-    internal static string? TryRetrieveTarget(string targetName, string key)
-    {
-        if (!CredReadW(targetName, CredTypeGeneric, 0, out IntPtr credentialPtr))
-        {
+
+   /// <summary>The Credential Manager target name used for <paramref name="key"/>.</summary>
+   public string TargetName(string key)
+   {
+      ArgumentException.ThrowIfNullOrEmpty(key);
+      return $"{_prefix}:{key}";
+   }
+
+
+
+   /// <inheritdoc/>
+   public void Store(string key, string secret)
+   {
+      ArgumentNullException.ThrowIfNull(secret);
+      string target = TargetName(key);
+
+      byte[] blob = Encoding.Unicode.GetBytes(secret);
+      var pinned = GCHandle.Alloc(blob, GCHandleType.Pinned);
+      try
+      {
+         var credential = new CredentialW
+         {
+            Type = CredTypeGeneric,
+            TargetName = target,
+            CredentialBlobSize = (uint)blob.Length,
+            CredentialBlob = pinned.AddrOfPinnedObject(),
+            Persist = CredPersistLocalMachine,
+            UserName = _prefix,
+         };
+
+         if(!CredWriteW(ref credential, 0))
+         {
             int error = Marshal.GetLastWin32Error();
-            if (error == ErrorNotFound)
-            {
-                return null;
-            }
-            throw new Win32Exception(error, $"CredReadW failed (error {error}) reading secret '{key}'.");
-        }
+            throw new Win32Exception(error, $"CredWriteW failed (error {error}) storing secret '{key}'.");
+         }
+      }
+      finally
+      {
+         // The array is pinned, so the GC cannot have copied it elsewhere: clearing
+         // it removes the one deterministic plaintext copy of the secret from the
+         // heap (crash dumps, pagefile) before unpinning.
+         Array.Clear(blob);
+         pinned.Free();
+      }
+   }
 
-        try
-        {
-            var credential = Marshal.PtrToStructure<CredentialW>(credentialPtr);
-            return credential.CredentialBlob == IntPtr.Zero || credential.CredentialBlobSize == 0
-                ? ""
-                : Marshal.PtrToStringUni(credential.CredentialBlob, (int)credential.CredentialBlobSize / 2);
-        }
-        finally
-        {
-            CredFree(credentialPtr);
-        }
-    }
 
-    /// <inheritdoc/>
-    public void Delete(string key) => DeleteTarget(TargetName(key), key);
 
-    /// <summary>Test seam: an invalid target name makes the non-not-found error arm coverable.</summary>
-    internal static void DeleteTarget(string targetName, string key)
-    {
-        if (!CredDeleteW(targetName, CredTypeGeneric, 0))
-        {
-            int error = Marshal.GetLastWin32Error();
-            if (error != ErrorNotFound)
-            {
-                throw new Win32Exception(error, $"CredDeleteW failed (error {error}) deleting secret '{key}'.");
-            }
-        }
-    }
+   /// <inheritdoc/>
+   public string? TryRetrieve(string key) => TryRetrieveTarget(TargetName(key), key);
 
-    /// <summary>
-    /// Managed mirror of the native CREDENTIALW structure. The explicit StructLayout
-    /// both fixes the field order for marshaling and tells the compiler the unread
-    /// fields (filled by CredReadW) are intentional.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct CredentialW
-    {
-        public uint Flags;
-        public uint Type;
-        [MarshalAs(UnmanagedType.LPWStr)] public string? TargetName;
-        [MarshalAs(UnmanagedType.LPWStr)] public string? Comment;
-        public System.Runtime.InteropServices.ComTypes.FILETIME LastWritten;
-        public uint CredentialBlobSize;
-        public IntPtr CredentialBlob;
-        public uint Persist;
-        public uint AttributeCount;
-        public IntPtr Attributes;
-        [MarshalAs(UnmanagedType.LPWStr)] public string? TargetAlias;
-        [MarshalAs(UnmanagedType.LPWStr)] public string? UserName;
-    }
 
-    [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool CredWriteW(ref CredentialW credential, uint flags);
 
-    [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool CredReadW(string targetName, uint type, uint flags, out IntPtr credential);
+   /// <summary>Test seam: an invalid target name makes the non-not-found error arm coverable.</summary>
+   internal static string? TryRetrieveTarget(string targetName, string key)
+   {
+      if(!CredReadW(targetName, CredTypeGeneric, 0, out IntPtr credentialPtr))
+      {
+         int error = Marshal.GetLastWin32Error();
+         if(error == ErrorNotFound)
+         {
+            return null;
+         }
+         throw new Win32Exception(error, $"CredReadW failed (error {error}) reading secret '{key}'.");
+      }
 
-    [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool CredDeleteW(string targetName, uint type, uint flags);
+      try
+      {
+         CredentialW credential = Marshal.PtrToStructure<CredentialW>(credentialPtr);
+         return credential.CredentialBlob == IntPtr.Zero || credential.CredentialBlobSize == 0
+             ? ""
+             : Marshal.PtrToStringUni(credential.CredentialBlob, (int)credential.CredentialBlobSize / 2);
+      }
+      finally
+      {
+         CredFree(credentialPtr);
+      }
+   }
 
-    [DllImport("advapi32.dll", ExactSpelling = true)]
-    private static extern void CredFree(IntPtr buffer);
+
+
+   /// <inheritdoc/>
+   public void Delete(string key) => DeleteTarget(TargetName(key), key);
+
+
+
+   /// <summary>Test seam: an invalid target name makes the non-not-found error arm coverable.</summary>
+   internal static void DeleteTarget(string targetName, string key)
+   {
+      if(!CredDeleteW(targetName, CredTypeGeneric, 0))
+      {
+         int error = Marshal.GetLastWin32Error();
+         if(error != ErrorNotFound)
+         {
+            throw new Win32Exception(error, $"CredDeleteW failed (error {error}) deleting secret '{key}'.");
+         }
+      }
+   }
+
+
+
+   /// <summary>
+   /// Managed mirror of the native CREDENTIALW structure. The explicit StructLayout
+   /// both fixes the field order for marshaling and tells the compiler the unread
+   /// fields (filled by CredReadW) are intentional.
+   /// </summary>
+   [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+   private struct CredentialW
+   {
+      public uint Flags;
+      public uint Type;
+      [MarshalAs(UnmanagedType.LPWStr)] public string? TargetName;
+      [MarshalAs(UnmanagedType.LPWStr)] public string? Comment;
+      public System.Runtime.InteropServices.ComTypes.FILETIME LastWritten;
+      public uint CredentialBlobSize;
+      public IntPtr CredentialBlob;
+      public uint Persist;
+      public uint AttributeCount;
+      public IntPtr Attributes;
+      [MarshalAs(UnmanagedType.LPWStr)] public string? TargetAlias;
+      [MarshalAs(UnmanagedType.LPWStr)] public string? UserName;
+   }
+
+
+
+   [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
+   [return: MarshalAs(UnmanagedType.Bool)]
+   private static extern bool CredWriteW(ref CredentialW credential, uint flags);
+
+
+
+   [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
+   [return: MarshalAs(UnmanagedType.Bool)]
+   private static extern bool CredReadW(string targetName, uint type, uint flags, out IntPtr credential);
+
+
+
+   [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
+   [return: MarshalAs(UnmanagedType.Bool)]
+   private static extern bool CredDeleteW(string targetName, uint type, uint flags);
+
+
+
+   [DllImport("advapi32.dll", ExactSpelling = true)]
+   private static extern void CredFree(IntPtr buffer);
 }
