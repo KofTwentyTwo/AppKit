@@ -33,12 +33,13 @@ public enum SampleKind
 /// </summary>
 public sealed class AppSession : IDisposable
 {
-   private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
-   private static readonly TimeSpan LaunchTimeout = TimeSpan.FromSeconds(30);
-   private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(250);
+   private static readonly TimeSpan s_defaultTimeout = TimeSpan.FromSeconds(10);
+   private static readonly TimeSpan s_launchTimeout = TimeSpan.FromSeconds(30);
+   private static readonly TimeSpan s_pollInterval = TimeSpan.FromMilliseconds(250);
 
 
 
+   /// <summary>Launches the sample against a fresh temporary data folder and waits for its main window.</summary>
    public AppSession(SampleKind kind, bool showSplash = false)
    {
       ExePath = ResolveExePath(kind);
@@ -110,20 +111,22 @@ public sealed class AppSession : IDisposable
 
 
 
+   /// <summary>Retries the lookup until it returns an element, or fails naming what was awaited.</summary>
    public AutomationElement WaitFor(Func<AutomationElement?> lookup, string description, TimeSpan? timeout = null)
    {
-      TimeSpan effective = timeout ?? DefaultTimeout;
-      RetryResult<AutomationElement?> result = Retry.WhileNull(lookup, timeout: effective, interval: PollInterval, ignoreException: true);
+      TimeSpan effective = timeout ?? s_defaultTimeout;
+      RetryResult<AutomationElement?> result = Retry.WhileNull(lookup, timeout: effective, interval: s_pollInterval, ignoreException: true);
       return result.Result
           ?? throw new TimeoutException($"Timed out after {effective.TotalSeconds:0}s waiting for {description}. (app exited: {App.HasExited})");
    }
 
 
 
+   /// <summary>Retries until the lookup returns nothing, or fails naming what was expected to disappear.</summary>
    public static void WaitUntilGone(Func<AutomationElement?> lookup, string description, TimeSpan? timeout = null)
    {
-      TimeSpan effective = timeout ?? DefaultTimeout;
-      if(!Retry.WhileTrue(() => lookup() is not null, timeout: effective, interval: PollInterval, ignoreException: true).Success)
+      TimeSpan effective = timeout ?? s_defaultTimeout;
+      if(!Retry.WhileTrue(() => lookup() is not null, timeout: effective, interval: s_pollInterval, ignoreException: true).Success)
       {
          throw new TimeoutException($"Timed out after {effective.TotalSeconds:0}s waiting for {description} to go away.");
       }
@@ -131,11 +134,13 @@ public sealed class AppSession : IDisposable
 
 
 
+   /// <summary>Waits for the element with the given automation id in any of the app&apos;s windows.</summary>
    public AutomationElement WaitForElement(string automationId, TimeSpan? timeout = null)
        => WaitFor(() => FindInApp(cf => cf.ByAutomationId(automationId)), $"element '{automationId}'", timeout);
 
 
 
+   /// <summary>Waits until no element with the given automation id remains.</summary>
    public void WaitForElementGone(string automationId, TimeSpan? timeout = null)
        => WaitUntilGone(() => FindInApp(cf => cf.ByAutomationId(automationId)), $"element '{automationId}'", timeout);
 
@@ -164,7 +169,7 @@ public sealed class AppSession : IDisposable
             Invoke(menu);
          }
          Wait.UntilInputIsProcessed();
-         item = Retry.WhileNull(() => FindInApp(cf => cf.ByAutomationId(itemAutomationId)), timeout: TimeSpan.FromSeconds(3), interval: PollInterval, ignoreException: true).Result;
+         item = Retry.WhileNull(() => FindInApp(cf => cf.ByAutomationId(itemAutomationId)), timeout: TimeSpan.FromSeconds(3), interval: s_pollInterval, ignoreException: true).Result;
       }
       Invoke(item ?? throw new TimeoutException($"Menu item '{itemAutomationId}' never appeared under '{menuName}'. (app exited: {App.HasExited})"));
    }
@@ -194,6 +199,7 @@ public sealed class AppSession : IDisposable
 
 
 
+   /// <summary>Invokes an element through UI Automation, falling back to a mouse click.</summary>
    private static void Invoke(AutomationElement element)
    {
       if(element.Patterns.Invoke.TryGetPattern(out IInvokePattern? invoke))
@@ -209,6 +215,7 @@ public sealed class AppSession : IDisposable
 
 
 
+   /// <summary>Waits for the app&apos;s main window, failing fast if the process exits.</summary>
    private Window WaitForMainWindow()
    {
       RetryResult<Window?> result = Retry.WhileNull(
@@ -227,13 +234,14 @@ public sealed class AppSession : IDisposable
                 return null;
              }
           },
-          timeout: LaunchTimeout,
-          interval: PollInterval);
-      return result.Result ?? throw new TimeoutException($"The main window did not appear within {LaunchTimeout.TotalSeconds:0}s. Exe: {ExePath}");
+          timeout: s_launchTimeout,
+          interval: s_pollInterval);
+      return result.Result ?? throw new TimeoutException($"The main window did not appear within {s_launchTimeout.TotalSeconds:0}s. Exe: {ExePath}");
    }
 
 
 
+   /// <summary>Reads a file the app may still be writing, without locking it.</summary>
    private static string ReadShared(string path)
    {
       if(!File.Exists(path))
@@ -280,6 +288,7 @@ public sealed class AppSession : IDisposable
 
 
 
+   /// <summary>Closes the app (killing it if needed), then disposes the automation and deletes the data folder.</summary>
    public void Dispose()
    {
       try

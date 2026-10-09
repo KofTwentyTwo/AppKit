@@ -7,14 +7,6 @@ using System.Text.RegularExpressions;
 
 
 namespace KofTwentyTwo.AppKit.Logging;
-
-/// <summary>The last lines of a log file and the file length they were read at.</summary>
-/// <param name="Lines">The tail, oldest first.</param>
-/// <param name="Length">File length in bytes when read; 0 when the file is absent.</param>
-public sealed record LogSnapshot(IReadOnlyList<string> Lines, long Length);
-
-
-
 /// <summary>
 /// Reads and filters <see cref="FileActivityLog"/> files for the log viewer windows.
 /// Never throws: this is diagnostics UI, and an unreadable file becomes a readable
@@ -100,6 +92,7 @@ public static partial class LogTail
 
 
 
-   [GeneratedRegex(@"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}")]
+   /// <summary>Matches the timestamp that starts every log entry, so continuation lines (exception text) can be told apart.</summary>
+   [GeneratedRegex(@"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
    private static partial Regex EntryStart();
 }

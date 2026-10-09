@@ -20,11 +20,11 @@ namespace KofTwentyTwo.AppKit.WinUI;
 /// </summary>
 public sealed partial class LogWindow : Window
 {
-   private static readonly TimeSpan RefreshInterval = TimeSpan.FromSeconds(1);
+   private static readonly TimeSpan s_refreshInterval = TimeSpan.FromSeconds(1);
    private static LogWindow? s_current;
 
    private readonly IActivityLog _log;
-   private readonly DispatcherTimer _refresh = new() { Interval = RefreshInterval };
+   private readonly DispatcherTimer _refresh = new() { Interval = s_refreshInterval };
    private readonly TextBlock _pathText = new() { VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, Opacity = 0.7 };
    private readonly TextBlock _logText = new() { FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 12, IsTextSelectionEnabled = true, TextWrapping = TextWrapping.NoWrap };
    private readonly ScrollViewer _scroll = new() { HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(12) };
@@ -105,6 +105,7 @@ public sealed partial class LogWindow : Window
 
 
 
+   /// <summary>Copies the visible log text to the clipboard.</summary>
    private void CopyToClipboard()
    {
       var package = new Windows.ApplicationModel.DataTransfer.DataPackage();
@@ -139,6 +140,7 @@ public sealed partial class LogWindow : Window
 
 
 
+   /// <summary>Rereads the log tail, applies the errors-only filter, and scrolls to the newest entry.</summary>
    private void Reload()
    {
       _pathText.Text = _log.CurrentLogFilePath; // the day can roll over while the window is open

@@ -5,8 +5,10 @@
 
 namespace KofTwentyTwo.AppKit.Tests;
 
+/// <summary>Tests for the splash and About credit text.</summary>
 public class CreditsTests
 {
+   /// <summary>ContactLine: joins what is set.</summary>
    [Fact]
    public void ContactLine_JoinsWhatIsSet()
    {
@@ -23,6 +25,7 @@ public class CreditsTests
 
 
 
+   /// <summary>ContactLine: empty when nothing is set.</summary>
    [Fact]
    public void ContactLine_EmptyWhenNothingIsSet()
    {
@@ -32,6 +35,7 @@ public class CreditsTests
 
 
 
+   /// <summary>The owner profile is host/owner for any repository URL, or just the host when the path is empty.</summary>
    [Theory]
    [InlineData(null, null)]
    [InlineData("https://github.com/", "github.com")]

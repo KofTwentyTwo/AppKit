@@ -16,6 +16,7 @@ public sealed class SampleSettings : ShellSettings
 
 
 
+   /// <summary>Repairs the shell settings, then clamps the app&apos;s own value.</summary>
    public override void Sanitize()
    {
       base.Sanitize();
@@ -33,6 +34,7 @@ public sealed class PlainSettings
 
 
 
+/// <summary>Source-generated serializer for the test settings types.</summary>
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(SampleSettings))]
 [JsonSerializable(typeof(PlainSettings))]
@@ -42,21 +44,25 @@ internal sealed partial class TestSettingsContext : JsonSerializerContext
 
 
 
+/// <summary>Tests for loading and saving settings, including corrupt files and failed writes.</summary>
 public sealed class SettingsStoreTests : IDisposable
 {
    private readonly TempDirectory _temp = new();
 
 
 
+   /// <summary>Deletes the test&apos;s temporary folder.</summary>
    public void Dispose() => _temp.Dispose();
 
 
 
+   /// <summary>A store for the sample settings, by default in a nested folder that does not exist yet.</summary>
    private SettingsStore<SampleSettings> Store(string? path = null)
        => new(path ?? _temp.File(Path.Combine("nested", "settings.json")), TestSettingsContext.Default.SampleSettings);
 
 
 
+   /// <summary>Load: missing file returns defaults.</summary>
    [Fact]
    public void Load_MissingFile_ReturnsDefaults()
    {
@@ -67,6 +73,7 @@ public sealed class SettingsStoreTests : IDisposable
 
 
 
+   /// <summary>SaveThenLoad: round trips.</summary>
    [Fact]
    public void SaveThenLoad_RoundTrips()
    {
@@ -86,6 +93,7 @@ public sealed class SettingsStoreTests : IDisposable
 
 
 
+   /// <summary>Load: corrupt or null file returns defaults.</summary>
    [Theory]
    [InlineData("{ not json")]
    [InlineData("null")]
@@ -99,6 +107,7 @@ public sealed class SettingsStoreTests : IDisposable
 
 
 
+   /// <summary>Load: sanitizes out of range values.</summary>
    [Fact]
    public void Load_SanitizesOutOfRangeValues()
    {
@@ -113,6 +122,7 @@ public sealed class SettingsStoreTests : IDisposable
 
 
 
+   /// <summary>Save: failure returns false.</summary>
    [Fact]
    public void Save_FailureReturnsFalse()
    {
@@ -123,6 +133,7 @@ public sealed class SettingsStoreTests : IDisposable
 
 
 
+   /// <summary>Save: swap fails cleans up the temporary file.</summary>
    [Fact]
    public void Save_SwapFails_CleansUpTheTemporaryFile()
    {
@@ -134,6 +145,7 @@ public sealed class SettingsStoreTests : IDisposable
 
 
 
+   /// <summary>Save: temporary path blocked returns false and leaves original.</summary>
    [Fact]
    public void Save_TemporaryPathBlocked_ReturnsFalseAndLeavesOriginal()
    {
@@ -156,6 +168,7 @@ public sealed class SettingsStoreTests : IDisposable
 
 
 
+   /// <summary>Save: bare file name writes relative to current directory.</summary>
    [Fact]
    public void Save_BareFileName_WritesRelativeToCurrentDirectory()
    {
@@ -173,6 +186,7 @@ public sealed class SettingsStoreTests : IDisposable
 
 
 
+   /// <summary>Constructor: and save validate arguments.</summary>
    [Fact]
    public void Constructor_And_Save_ValidateArguments()
    {
@@ -184,8 +198,10 @@ public sealed class SettingsStoreTests : IDisposable
 
 
 
+/// <summary>Tests for the shared shell settings and their repair rules.</summary>
 public class ShellSettingsTests
 {
+   /// <summary>ThemeKind: tolerates bad stored values.</summary>
    [Theory]
    [InlineData("Light", AppTheme.Light)]
    [InlineData("Dark", AppTheme.Dark)]
@@ -200,6 +216,7 @@ public class ShellSettingsTests
 
 
 
+   /// <summary>Sanitize: clamps splash.</summary>
    [Theory]
    [InlineData(0, ShellSettings.DefaultSplashMilliseconds)]
    [InlineData(1, ShellSettings.MinSplashMilliseconds)]
@@ -215,6 +232,7 @@ public class ShellSettingsTests
 
 
 
+   /// <summary>Fresh settings show the splash, check for updates, and use the default splash time.</summary>
    [Fact]
    public void Defaults()
    {

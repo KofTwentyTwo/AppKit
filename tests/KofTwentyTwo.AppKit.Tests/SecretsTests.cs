@@ -9,8 +9,10 @@ using KofTwentyTwo.AppKit.Secrets;
 
 namespace KofTwentyTwo.AppKit.Tests;
 
+/// <summary>Tests for the in-memory secret vault.</summary>
 public class InMemorySecretVaultTests
 {
+   /// <summary>Store, overwrite, retrieve, and delete behave like a dictionary, and deleting twice is harmless.</summary>
    [Fact]
    public void StoreRetrieveDelete()
    {
@@ -26,6 +28,7 @@ public class InMemorySecretVaultTests
 
 
 
+   /// <summary>Empty keys and null secrets are rejected.</summary>
    [Fact]
    public void ValidatesArguments()
    {
@@ -46,6 +49,7 @@ public sealed class CredentialManagerVaultTests : IDisposable
 
 
 
+   /// <summary>Removes the credentials the test may have created.</summary>
    public void Dispose()
    {
       _vault.Delete("token");
@@ -54,6 +58,7 @@ public sealed class CredentialManagerVaultTests : IDisposable
 
 
 
+   /// <summary>A secret round-trips through the Credential Manager, overwrites in place, and deletes cleanly.</summary>
    [Fact]
    public void StoreRetrieveOverwriteDelete()
    {
@@ -68,6 +73,7 @@ public sealed class CredentialManagerVaultTests : IDisposable
 
 
 
+   /// <summary>EmptySecret: round trips.</summary>
    [Fact]
    public void EmptySecret_RoundTrips()
    {
@@ -77,6 +83,7 @@ public sealed class CredentialManagerVaultTests : IDisposable
 
 
 
+   /// <summary>TargetName: is prefix colon key.</summary>
    [Fact]
    public void TargetName_IsPrefixColonKey()
    {
@@ -87,6 +94,7 @@ public sealed class CredentialManagerVaultTests : IDisposable
 
 
 
+   /// <summary>OversizedSecret: fails loudly.</summary>
    [Fact]
    public void OversizedSecret_FailsLoudly()
    {
@@ -98,6 +106,7 @@ public sealed class CredentialManagerVaultTests : IDisposable
 
 
 
+   /// <summary>InvalidTargets: surface native errors.</summary>
    [Fact]
    public void InvalidTargets_SurfaceNativeErrors()
    {
@@ -107,6 +116,7 @@ public sealed class CredentialManagerVaultTests : IDisposable
 
 
 
+   /// <summary>Constructor: validates platform and prefix.</summary>
    [Fact]
    public void Constructor_ValidatesPlatformAndPrefix()
    {

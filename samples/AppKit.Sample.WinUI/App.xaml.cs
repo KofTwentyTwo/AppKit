@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml;
 
 namespace AppKit.Sample.WinUI;
 
+/// <summary>The WinUI sample application: installs AppKit&apos;s crash net and the saved theme, then opens the main window.</summary>
 public partial class App : Application
 {
    private Window? _window;
@@ -19,6 +20,7 @@ public partial class App : Application
 
 
 
+   /// <summary>Installs the crash net and applies the saved theme; WinUI allows setting the application theme only here, before any window exists.</summary>
    public App()
    {
       InitializeComponent();
@@ -29,6 +31,7 @@ public partial class App : Application
 
 
 
+   /// <summary>Logs the start and opens the main window.</summary>
    protected override void OnLaunched(LaunchActivatedEventArgs args)
    {
       Log.Info($"{SampleApp.Info.DisplayName} started.");

@@ -103,6 +103,7 @@ public sealed class LogWindow : Window
 
 
 
+   /// <summary>Timer tick: reloads only when Follow is on and the log file grew or rolled over to a new day.</summary>
    private void RefreshIfChanged()
    {
       if(_follow.IsChecked != true)
@@ -127,6 +128,7 @@ public sealed class LogWindow : Window
 
 
 
+   /// <summary>Rereads the log tail, applies the errors-only filter, and scrolls to the newest entry.</summary>
    private void Reload()
    {
       _pathText.Text = _log.CurrentLogFilePath;

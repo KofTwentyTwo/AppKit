@@ -11,6 +11,7 @@ using KofTwentyTwo.AppKit.Wpf;
 
 namespace AppKit.Sample.Wpf;
 
+/// <summary>The sample&apos;s main window: each control exercises one AppKit service.</summary>
 public partial class MainWindow : Window
 {
    private readonly SampleSettings _settings = SampleApp.SettingsStore.Load();
@@ -18,6 +19,7 @@ public partial class MainWindow : Window
 
 
 
+   /// <summary>Brands the window, wires the update coordinator, restores the saved settings, shows the splash, and schedules the quiet startup update check.</summary>
    public MainWindow()
    {
       InitializeComponent();
@@ -49,10 +51,12 @@ public partial class MainWindow : Window
 
 
 
+   /// <summary>File, Exit.</summary>
    private void Exit_Click(object sender, RoutedEventArgs e) => Close();
 
 
 
+   /// <summary>View, theme: applies the chosen Fluent theme to the application and saves it.</summary>
    private void Theme_Click(object sender, RoutedEventArgs e)
    {
       _settings.Theme = (string)((FrameworkElement)sender).Tag;
@@ -63,6 +67,7 @@ public partial class MainWindow : Window
 
 
 
+   /// <summary>View, Show splash at startup: saves the preference.</summary>
    private void Splash_Click(object sender, RoutedEventArgs e)
    {
       _settings.ShowSplashScreen = SplashToggle.IsChecked;
@@ -71,18 +76,22 @@ public partial class MainWindow : Window
 
 
 
+   /// <summary>Help, Check for updates: runs the interactive update flow.</summary>
    private async void CheckForUpdates_Click(object sender, RoutedEventArgs e) => await _updates.CheckInteractivelyAsync();
 
 
 
+   /// <summary>Help, Activity log: opens the live log window, or brings the open one forward.</summary>
    private void ActivityLog_Click(object sender, RoutedEventArgs e) => LogWindow.ShowSingle(Program.Log, SampleApp.Info);
 
 
 
+   /// <summary>Help, About: shows the About window.</summary>
    private void About_Click(object sender, RoutedEventArgs e) => AboutWindow.Show(SampleApp.Info, this);
 
 
 
+   /// <summary>Writes an INFO entry, to show logging.</summary>
    private void LogInfo_Click(object sender, RoutedEventArgs e)
    {
       Program.Log.Info("The user pressed 'Write a log entry'.");
@@ -91,6 +100,7 @@ public partial class MainWindow : Window
 
 
 
+   /// <summary>Logs a handled exception with its stack trace, to show error logging.</summary>
    private void LogError_Click(object sender, RoutedEventArgs e)
    {
       try
@@ -106,6 +116,7 @@ public partial class MainWindow : Window
 
 
 
+   /// <summary>Throws on purpose, to show that the crash net logs the exception and the app keeps running.</summary>
    private void Throw_Click(object sender, RoutedEventArgs e)
    {
       StatusText.Text = "Threw; the crash net logged it and the app kept running.";
@@ -114,6 +125,7 @@ public partial class MainWindow : Window
 
 
 
+   /// <summary>Checks the View menu item that matches the saved theme and clears the others.</summary>
    private void CheckTheme()
    {
       foreach(MenuItem item in new[] { ThemeSystem, ThemeLight, ThemeDark })
@@ -124,6 +136,7 @@ public partial class MainWindow : Window
 
 
 
+   /// <summary>Saves the settings and reports a failed save in the status line.</summary>
    private void Save()
    {
       if(!SampleApp.SettingsStore.Save(_settings))

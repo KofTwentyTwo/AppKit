@@ -11,6 +11,7 @@ using Microsoft.UI.Xaml;
 
 namespace AppKit.Sample.WinUI;
 
+/// <summary>The sample&apos;s main window: each control exercises one AppKit service.</summary>
 public sealed partial class MainWindow : Window
 {
    private readonly SampleSettings _settings = SampleApp.SettingsStore.Load();
@@ -18,6 +19,7 @@ public sealed partial class MainWindow : Window
 
 
 
+   /// <summary>Sizes and brands the window, wires the update coordinator, restores the saved settings, shows the splash, and schedules the quiet startup update check.</summary>
    public MainWindow()
    {
       InitializeComponent();
@@ -41,20 +43,31 @@ public sealed partial class MainWindow : Window
 
       if(_settings.CheckForUpdatesOnStartup)
       {
-         DispatcherQueue.TryEnqueue(async () =>
-         {
-            await Task.Delay(_settings.ShowSplashScreen ? _settings.SplashMilliseconds + 500 : 1000);
-            await _updates.CheckQuietlyAsync();
-         });
+         // The constructor runs on the UI thread, so the check resumes there to show dialogs.
+         _ = CheckForUpdatesAfterStartupAsync();
       }
    }
 
 
 
+   /// <summary>
+   /// Waits for the splash to clear (dialogs need the window's XamlRoot), then runs the
+   /// quiet startup update check, which only speaks up when an update exists.
+   /// </summary>
+   private async Task CheckForUpdatesAfterStartupAsync()
+   {
+      await Task.Delay(_settings.ShowSplashScreen ? _settings.SplashMilliseconds + 500 : 1000);
+      await _updates.CheckQuietlyAsync();
+   }
+
+
+
+   /// <summary>File, Exit.</summary>
    private void Exit_Click(object sender, RoutedEventArgs e) => Close();
 
 
 
+   /// <summary>View, theme: applies the chosen theme to the window and saves it.</summary>
    private void Theme_Click(object sender, RoutedEventArgs e)
    {
       _settings.Theme = (string)((FrameworkElement)sender).Tag;
@@ -64,6 +77,7 @@ public sealed partial class MainWindow : Window
 
 
 
+   /// <summary>View, Show splash at startup: saves the preference.</summary>
    private void Splash_Click(object sender, RoutedEventArgs e)
    {
       _settings.ShowSplashScreen = SplashToggle.IsChecked;
@@ -72,18 +86,22 @@ public sealed partial class MainWindow : Window
 
 
 
+   /// <summary>Help, Check for updates: runs the interactive update flow.</summary>
    private async void CheckForUpdates_Click(object sender, RoutedEventArgs e) => await _updates.CheckInteractivelyAsync();
 
 
 
+   /// <summary>Help, Activity log: opens the live log window, or brings the open one forward.</summary>
    private void ActivityLog_Click(object sender, RoutedEventArgs e) => LogWindow.ShowSingle(App.Log, SampleApp.Info);
 
 
 
+   /// <summary>Help, About: shows the About dialog.</summary>
    private async void About_Click(object sender, RoutedEventArgs e) => await AboutDialog.ShowAsync(SampleApp.Info, Content.XamlRoot);
 
 
 
+   /// <summary>Writes an INFO entry, to show logging.</summary>
    private void LogInfo_Click(object sender, RoutedEventArgs e)
    {
       App.Log.Info("The user pressed 'Write a log entry'.");
@@ -92,6 +110,7 @@ public sealed partial class MainWindow : Window
 
 
 
+   /// <summary>Logs a handled exception with its stack trace, to show error logging.</summary>
    private void LogError_Click(object sender, RoutedEventArgs e)
    {
       try
@@ -107,6 +126,7 @@ public sealed partial class MainWindow : Window
 
 
 
+   /// <summary>Throws on purpose, to show that the crash net logs the exception and the app keeps running.</summary>
    private void Throw_Click(object sender, RoutedEventArgs e)
    {
       StatusText.Text = "Threw; the crash net logged it and the app kept running.";
@@ -115,6 +135,7 @@ public sealed partial class MainWindow : Window
 
 
 
+   /// <summary>Saves the settings and reports a failed save in the status line.</summary>
    private void Save()
    {
       if(!SampleApp.SettingsStore.Save(_settings))

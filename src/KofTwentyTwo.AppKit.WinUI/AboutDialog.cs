@@ -102,6 +102,7 @@ public sealed partial class AboutDialog : ContentDialog
 
 
 
+   /// <summary>A titled section of the dialog body: a bold heading the caller adds content lines under.</summary>
    private static StackPanel Section(string heading)
    {
       var section = new StackPanel { Spacing = 4 };
@@ -111,6 +112,7 @@ public sealed partial class AboutDialog : ContentDialog
 
 
 
+   /// <summary>Looks up a theme style by key; null when the app&apos;s resources lack it, so the text falls back to default styling instead of failing.</summary>
    private static Style? ThemeStyle(string key)
        => Application.Current.Resources.TryGetValue(key, out object? style) ? style as Style : null;
 }

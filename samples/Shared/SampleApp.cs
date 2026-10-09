@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-using System.Text.Json.Serialization;
 using KofTwentyTwo.AppKit;
 using KofTwentyTwo.AppKit.Settings;
 
@@ -26,11 +25,11 @@ internal static class SampleApp
       Copyright = "Copyright (c) 2026 James Maes",
       Brand = new AppBrand { IconSvgPath = "Assets/Brand/app-icon.svg", IconIcoPath = "Assets/Brand/app.ico" },
       Attributions =
-       [
-           new("KofTwentyTwo.AppKit", "MIT License"),
-            new("Velopack", "MIT License"),
-            new(".NET Runtime", "MIT License"),
-        ],
+      [
+         new("KofTwentyTwo.AppKit", "MIT License"),
+         new("Velopack", "MIT License"),
+         new(".NET Runtime", "MIT License"),
+      ],
    };
 
 
@@ -38,28 +37,4 @@ internal static class SampleApp
    public static AppPaths Paths { get; } = new(Info);
 
    public static SettingsStore<SampleSettings> SettingsStore { get; } = new(Paths.SettingsFile, SampleSettingsContext.Default.SampleSettings);
-}
-
-
-
-/// <summary>The sample's preferences: the shared shell settings plus one of its own.</summary>
-internal sealed class SampleSettings : ShellSettings
-{
-   public string Greeting { get; set; } = "Hello from AppKit";
-
-
-
-   public override void Sanitize()
-   {
-      base.Sanitize();
-      Greeting ??= "Hello from AppKit";
-   }
-}
-
-
-
-[JsonSourceGenerationOptions(WriteIndented = true)]
-[JsonSerializable(typeof(SampleSettings))]
-internal sealed partial class SampleSettingsContext : JsonSerializerContext
-{
 }

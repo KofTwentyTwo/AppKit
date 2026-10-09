@@ -7,22 +7,6 @@ using System.Text.Json.Serialization;
 
 
 namespace KofTwentyTwo.AppKit.Settings;
-
-/// <summary>The app's color theme.</summary>
-public enum AppTheme
-{
-   /// <summary>Follow the Windows setting.</summary>
-   System,
-
-   /// <summary>Always light.</summary>
-   Light,
-
-   /// <summary>Always dark.</summary>
-   Dark,
-}
-
-
-
 /// <summary>
 /// Preferences every AppKit app shares: theme, startup splash, and automatic update
 /// checks. Apps derive their own settings class from this one and register the derived

@@ -6,32 +6,6 @@
 namespace KofTwentyTwo.AppKit.Updates;
 
 /// <summary>
-/// Result of an update check. <see cref="AvailableVersion"/> is the newer version
-/// found, or null when already up to date; <see cref="Error"/> is non-null when the
-/// check itself failed.
-/// </summary>
-public sealed record UpdateCheckResult(string? AvailableVersion, string? Error)
-{
-   /// <summary>No newer version exists.</summary>
-   public static UpdateCheckResult UpToDate { get; } = new(null, null);
-
-   /// <summary>True when a newer version was found.</summary>
-   public bool IsUpdateAvailable => Error is null && AvailableVersion is not null;
-
-
-
-   /// <summary>A newer version was found.</summary>
-   public static UpdateCheckResult Available(string version) => new(version, null);
-
-
-
-   /// <summary>The check failed.</summary>
-   public static UpdateCheckResult Failed(string error) => new(null, error);
-}
-
-
-
-/// <summary>
 /// Checks for and installs app updates. Every member is guarded: failures come back as
 /// values, never exceptions, because nothing as optional as an update may crash the app.
 /// </summary>

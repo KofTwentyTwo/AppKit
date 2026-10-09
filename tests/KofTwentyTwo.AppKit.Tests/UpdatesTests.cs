@@ -8,8 +8,10 @@ using KofTwentyTwo.AppKit.Updates;
 
 namespace KofTwentyTwo.AppKit.Tests;
 
+/// <summary>Tests for update check results.</summary>
 public class UpdateCheckResultTests
 {
+   /// <summary>Only a result with a version and no error counts as an available update.</summary>
    [Fact]
    public void Factories()
    {
@@ -22,8 +24,10 @@ public class UpdateCheckResultTests
 
 
 
+/// <summary>Tests for the update service&apos;s guarding and state, over a fake Velopack backend.</summary>
 public class VelopackUpdateServiceTests
 {
+   /// <summary>NotInstalled: is unsupported.</summary>
    [Fact]
    public async Task NotInstalled_IsUnsupported()
    {
@@ -36,6 +40,7 @@ public class VelopackUpdateServiceTests
 
 
 
+   /// <summary>BackendThatCannotBeCreated: is unsupported and never throws.</summary>
    [Fact]
    public async Task BackendThatCannotBeCreated_IsUnsupportedAndNeverThrows()
    {
@@ -48,6 +53,7 @@ public class VelopackUpdateServiceTests
 
 
 
+   /// <summary>Check: finds update then downloads applies with progress.</summary>
    [Fact]
    public async Task Check_FindsUpdate_ThenDownloadsAppliesWithProgress()
    {
@@ -69,6 +75,7 @@ public class VelopackUpdateServiceTests
 
 
 
+   /// <summary>Check: up to date leaves nothing to install.</summary>
    [Fact]
    public async Task Check_UpToDate_LeavesNothingToInstall()
    {
@@ -79,6 +86,7 @@ public class VelopackUpdateServiceTests
 
 
 
+   /// <summary>Check: failure is reported and clears pending update.</summary>
    [Fact]
    public async Task Check_Failure_IsReportedAndClearsPendingUpdate()
    {
@@ -93,6 +101,7 @@ public class VelopackUpdateServiceTests
 
 
 
+   /// <summary>DownloadFailure: is returned.</summary>
    [Fact]
    public async Task DownloadFailure_IsReturned()
    {
@@ -105,6 +114,7 @@ public class VelopackUpdateServiceTests
 
 
 
+   /// <summary>RealVelopack: outside an install is unsupported.</summary>
    [Fact]
    public async Task RealVelopack_OutsideAnInstall_IsUnsupported()
    {
@@ -117,6 +127,7 @@ public class VelopackUpdateServiceTests
 
 
 
+   /// <summary>NullRepository: throws.</summary>
    [Fact]
    public void NullRepository_Throws()
    {
@@ -125,14 +136,17 @@ public class VelopackUpdateServiceTests
 
 
 
+   /// <summary>An IProgress that reports immediately on the calling thread, so assertions see the values.</summary>
    private sealed class SynchronousProgress(Action<int> report) : IProgress<int>
    {
+      /// <summary>Forwards the value to the callback.</summary>
       public void Report(int value) => report(value);
    }
 }
 
 
 
+/// <summary>Tests for the interactive and quiet update flows.</summary>
 public class UpdateCoordinatorTests
 {
    private readonly FakeUpdateService _updates = new();
@@ -140,10 +154,12 @@ public class UpdateCoordinatorTests
 
 
 
+   /// <summary>A coordinator over the fake service and the given prompter, logging to the recording log.</summary>
    private UpdateCoordinator Coordinator(RecordingPrompter prompter) => new(_updates, prompter, "Sample", _log);
 
 
 
+   /// <summary>Interactive: unsupported says so.</summary>
    [Fact]
    public async Task Interactive_Unsupported_SaysSo()
    {
@@ -155,6 +171,7 @@ public class UpdateCoordinatorTests
 
 
 
+   /// <summary>Interactive: failure explains and logs.</summary>
    [Fact]
    public async Task Interactive_Failure_ExplainsAndLogs()
    {
@@ -167,6 +184,7 @@ public class UpdateCoordinatorTests
 
 
 
+   /// <summary>Interactive: up to date shows current version.</summary>
    [Theory]
    [InlineData("1.0.0", "You are up to date (v1.0.0).")]
    [InlineData(null, "You are up to date.")]
@@ -180,6 +198,7 @@ public class UpdateCoordinatorTests
 
 
 
+   /// <summary>Interactive: available declined does not install.</summary>
    [Fact]
    public async Task Interactive_Available_Declined_DoesNotInstall()
    {
@@ -196,6 +215,7 @@ public class UpdateCoordinatorTests
 
 
 
+   /// <summary>Interactive: available accepted installs.</summary>
    [Fact]
    public async Task Interactive_Available_Accepted_Installs()
    {
@@ -209,6 +229,7 @@ public class UpdateCoordinatorTests
 
 
 
+   /// <summary>Install: failure is shown and logged.</summary>
    [Fact]
    public async Task Install_Failure_IsShownAndLogged()
    {
@@ -222,6 +243,7 @@ public class UpdateCoordinatorTests
 
 
 
+   /// <summary>Quiet: unsupported up to date and failure stay silent.</summary>
    [Fact]
    public async Task Quiet_Unsupported_UpToDate_AndFailure_StaySilent()
    {
@@ -242,6 +264,7 @@ public class UpdateCoordinatorTests
 
 
 
+   /// <summary>Quiet: available offers the update.</summary>
    [Fact]
    public async Task Quiet_Available_OffersTheUpdate()
    {
@@ -255,6 +278,7 @@ public class UpdateCoordinatorTests
 
 
 
+   /// <summary>NullLog: is allowed.</summary>
    [Fact]
    public async Task NullLog_IsAllowed()
    {
@@ -264,6 +288,7 @@ public class UpdateCoordinatorTests
 
 
 
+   /// <summary>Constructor: validates arguments.</summary>
    [Fact]
    public void Constructor_ValidatesArguments()
    {

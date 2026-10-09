@@ -9,47 +9,6 @@ using KofTwentyTwo.AppKit.Logging;
 
 namespace KofTwentyTwo.AppKit.Updates;
 
-/// <summary>User-facing text of the update flow, shared by every UI package.</summary>
-public static class UpdateText
-{
-   /// <summary>Title of the check dialogs.</summary>
-   public const string CheckTitle = "Check for updates";
-
-   /// <summary>Title of the confirmation dialog.</summary>
-   public const string AvailableTitle = "Update available";
-
-   /// <summary>Title shown when installing failed.</summary>
-   public const string FailedTitle = "Update failed";
-
-   /// <summary>Shown in builds that cannot self-update.</summary>
-   public const string NotSupported = "Updates are only available in installed builds.";
-
-   /// <summary>Confirm button.</summary>
-   public const string Confirm = "Update and restart";
-
-   /// <summary>Decline button.</summary>
-   public const string Decline = "Not now";
-
-
-
-   /// <summary>"You are up to date (v1.2.3)."</summary>
-   public static string UpToDate(string? currentVersion)
-       => currentVersion is null ? "You are up to date." : $"You are up to date (v{currentVersion}).";
-
-
-
-   /// <summary>Explains a failed check.</summary>
-   public static string CheckFailed(string error) => $"Could not check for updates.\n{error}";
-
-
-
-   /// <summary>Offers the update.</summary>
-   public static string Available(string appName, string version)
-       => $"{appName} v{version} is available. The app will restart to finish installing the update.";
-}
-
-
-
 /// <summary>
 /// The "check for updates" flows, written once against <see cref="IUpdateService"/> and
 /// <see cref="IUserPrompter"/> so WinUI and WPF apps behave identically and the logic is
@@ -140,6 +99,7 @@ public sealed class UpdateCoordinator
 
 
 
+   /// <summary>Offers the update and, when accepted, downloads it, applies it, and restarts. A failed install is logged and shown, because reaching the end means the restart did not happen.</summary>
    private async Task OfferAsync(string version, CancellationToken cancellationToken)
    {
       bool accepted = await _prompter.ConfirmAsync(

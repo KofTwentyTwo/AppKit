@@ -8,6 +8,7 @@ using KofTwentyTwo.AppKit.Logging;
 
 namespace KofTwentyTwo.AppKit.Tests;
 
+/// <summary>Tests for the daily file log: entry format, rollover, retention, and failure handling.</summary>
 public sealed class FileActivityLogTests : IDisposable
 {
    private readonly TempDirectory _temp = new();
@@ -15,10 +16,12 @@ public sealed class FileActivityLogTests : IDisposable
 
 
 
+   /// <summary>Deletes the test&apos;s temporary folder.</summary>
    public void Dispose() => _temp.Dispose();
 
 
 
+   /// <summary>Writes: timestamped levels to todays file.</summary>
    [Fact]
    public void Writes_TimestampedLevels_ToTodaysFile()
    {
@@ -39,6 +42,7 @@ public sealed class FileActivityLogTests : IDisposable
 
 
 
+   /// <summary>RollsOver: at midnight.</summary>
    [Fact]
    public void RollsOver_AtMidnight()
    {
@@ -52,6 +56,7 @@ public sealed class FileActivityLogTests : IDisposable
 
 
 
+   /// <summary>Prunes: files outside retention once per day.</summary>
    [Fact]
    public void Prunes_FilesOutsideRetention_OncePerDay()
    {
@@ -80,6 +85,7 @@ public sealed class FileActivityLogTests : IDisposable
 
 
 
+   /// <summary>Prune: skips files it cannot delete.</summary>
    [Fact]
    public void Prune_SkipsFilesItCannotDelete()
    {
@@ -96,6 +102,7 @@ public sealed class FileActivityLogTests : IDisposable
 
 
 
+   /// <summary>ZeroRetention: keeps everything.</summary>
    [Fact]
    public void ZeroRetention_KeepsEverything()
    {
@@ -108,6 +115,7 @@ public sealed class FileActivityLogTests : IDisposable
 
 
 
+   /// <summary>WriteFailures: are swallowed.</summary>
    [Fact]
    public void WriteFailures_AreSwallowed()
    {
@@ -121,6 +129,7 @@ public sealed class FileActivityLogTests : IDisposable
 
 
 
+   /// <summary>ForApp: uses the apps logs folder and id.</summary>
    [Fact]
    public void ForApp_UsesTheAppsLogsFolderAndId()
    {
@@ -136,6 +145,7 @@ public sealed class FileActivityLogTests : IDisposable
 
 
 
+   /// <summary>Constructor: validates arguments.</summary>
    [Fact]
    public void Constructor_ValidatesArguments()
    {
@@ -146,6 +156,7 @@ public sealed class FileActivityLogTests : IDisposable
 
 
 
+   /// <summary>NullLog: discards everything.</summary>
    [Fact]
    public void NullLog_DiscardsEverything()
    {
@@ -160,16 +171,19 @@ public sealed class FileActivityLogTests : IDisposable
 
 
 
+/// <summary>Tests for reading and filtering log tails.</summary>
 public sealed class LogTailTests : IDisposable
 {
    private readonly TempDirectory _temp = new();
 
 
 
+   /// <summary>Deletes the test&apos;s temporary folder.</summary>
    public void Dispose() => _temp.Dispose();
 
 
 
+   /// <summary>Read: missing file is empty.</summary>
    [Theory]
    [InlineData(null)]
    [InlineData("")]
@@ -183,6 +197,7 @@ public sealed class LogTailTests : IDisposable
 
 
 
+   /// <summary>Read: keeps only the tail.</summary>
    [Fact]
    public void Read_KeepsOnlyTheTail()
    {
@@ -195,6 +210,7 @@ public sealed class LogTailTests : IDisposable
 
 
 
+   /// <summary>Read: locked file returns an explanation.</summary>
    [Fact]
    public void Read_LockedFile_ReturnsAnExplanation()
    {
@@ -208,6 +224,7 @@ public sealed class LogTailTests : IDisposable
 
 
 
+   /// <summary>Read: rejects non positive line counts.</summary>
    [Fact]
    public void Read_RejectsNonPositiveLineCounts()
    {
@@ -216,6 +233,7 @@ public sealed class LogTailTests : IDisposable
 
 
 
+   /// <summary>ErrorsOnly: keeps error entries with continuation lines.</summary>
    [Fact]
    public void ErrorsOnly_KeepsErrorEntriesWithContinuationLines()
    {
@@ -235,6 +253,7 @@ public sealed class LogTailTests : IDisposable
 
 
 
+   /// <summary>ToDisplayText: has friendly empty states.</summary>
    [Fact]
    public void ToDisplayText_HasFriendlyEmptyStates()
    {
@@ -245,6 +264,7 @@ public sealed class LogTailTests : IDisposable
 
 
 
+   /// <summary>NullArguments: throw.</summary>
    [Fact]
    public void NullArguments_Throw()
    {

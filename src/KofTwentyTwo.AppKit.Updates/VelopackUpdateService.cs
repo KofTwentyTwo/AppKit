@@ -9,34 +9,6 @@ using System.Reflection;
 namespace KofTwentyTwo.AppKit.Updates;
 
 /// <summary>
-/// The narrow slice of Velopack the update service uses, so the guarding and state
-/// logic is testable without an installed app or the network.
-/// </summary>
-internal interface IUpdateBackend
-{
-   bool IsInstalled { get; }
-
-   string? CurrentVersion { get; }
-
-
-
-   /// <summary>The newer version found (and remembered for download), or null.</summary>
-   Task<string?> CheckAsync();
-
-
-
-   /// <summary>Downloads the remembered update.</summary>
-   Task DownloadAsync(Action<int>? progress, CancellationToken cancellationToken);
-
-
-
-   /// <summary>Applies the downloaded update and restarts; exits the process on success.</summary>
-   void ApplyAndRestart();
-}
-
-
-
-/// <summary>
 /// Self-update via Velopack with releases hosted on the app's public GitHub repository.
 /// A prerelease build (a '-' in its version) follows the dev channel, whose packages
 /// are attached to GitHub prereleases, so prerelease builds must look at prereleases or

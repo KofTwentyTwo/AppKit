@@ -40,6 +40,29 @@ public sealed partial class SplashOverlay : UserControl
       AutomationProperties.SetName(root, $"{app.DisplayName} is starting");
       AutomationProperties.SetAutomationId(root, "AppKitSplash");
 
+      root.Children.Add(BuildCenter(app, versionAssembly ?? Assembly.GetEntryAssembly()));
+      if(BuildCredit(app) is { } credit)
+      {
+         root.Children.Add(credit);
+      }
+      root.Children.Add(BuildActivityStrip());
+
+      var fade = new DoubleAnimation { To = 0, Duration = new Duration(TimeSpan.FromMilliseconds(250)) };
+      Storyboard.SetTarget(fade, root);
+      Storyboard.SetTargetProperty(fade, "Opacity");
+      _fadeOut.Children.Add(fade);
+
+      Content = root;
+   }
+
+
+
+   /// <summary>
+   /// The centered brand block: the vector mark, the name, the tagline, and the build
+   /// identity of <paramref name="assembly"/> when there is one.
+   /// </summary>
+   private static StackPanel BuildCenter(AppInfo app, Assembly? assembly)
+   {
       var center = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
       center.Children.Add(new Image
       {
@@ -58,37 +81,55 @@ public sealed partial class SplashOverlay : UserControl
          tagline.Margin = new Thickness(0, 4, 0, 0);
          AddCentered(center, tagline);
       }
-      Assembly? assembly = versionAssembly ?? Assembly.GetEntryAssembly();
       if(assembly is not null)
       {
          TextBlock version = Brand.Text(BuildVersion.Describe(assembly), 12, 0.6);
          version.Margin = new Thickness(0, 8, 0, 0);
          AddCentered(center, version);
       }
-      root.Children.Add(center);
+      return center;
+   }
 
+
+
+   /// <summary>
+   /// The author credit anchored above the activity strip, or null when the app declares
+   /// neither an author nor any contact details.
+   /// </summary>
+   private static StackPanel? BuildCredit(AppInfo app)
+   {
       string contact = Credits.ContactLine(app);
-      if(app.Author.Length > 0 || contact.Length > 0)
+      if(app.Author.Length == 0 && contact.Length == 0)
       {
-         var credit = new StackPanel
-         {
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Bottom,
-            Margin = new Thickness(0, 0, 0, 44),
-            Spacing = 3,
-         };
-         if(app.Author.Length > 0)
-         {
-            AddCentered(credit, Brand.Text("Created by " + app.Author, 13, 0.85, strong: true));
-         }
-         if(contact.Length > 0)
-         {
-            AddCentered(credit, Brand.Text(contact, 12, 0.6));
-         }
-         root.Children.Add(credit);
+         return null;
       }
 
-      // Thin activity strip: white bar over a 20% white track.
+      var credit = new StackPanel
+      {
+         HorizontalAlignment = HorizontalAlignment.Center,
+         VerticalAlignment = VerticalAlignment.Bottom,
+         Margin = new Thickness(0, 0, 0, 44),
+         Spacing = 3,
+      };
+      if(app.Author.Length > 0)
+      {
+         AddCentered(credit, Brand.Text("Created by " + app.Author, 13, 0.85, strong: true));
+      }
+      if(contact.Length > 0)
+      {
+         AddCentered(credit, Brand.Text(contact, 12, 0.6));
+      }
+      return credit;
+   }
+
+
+
+   /// <summary>
+   /// The thin activity strip at the bottom: a white bar over a 20% white track, with the
+   /// track height resource overridden so the track matches the 3px bar.
+   /// </summary>
+   private static ProgressBar BuildActivityStrip()
+   {
       var progress = new ProgressBar
       {
          IsIndeterminate = true,
@@ -100,14 +141,7 @@ public sealed partial class SplashOverlay : UserControl
          Margin = new Thickness(0, 0, 0, 20),
       };
       progress.Resources["ProgressBarTrackHeight"] = 3.0;
-      root.Children.Add(progress);
-
-      var fade = new DoubleAnimation { To = 0, Duration = new Duration(TimeSpan.FromMilliseconds(250)) };
-      Storyboard.SetTarget(fade, root);
-      Storyboard.SetTargetProperty(fade, "Opacity");
-      _fadeOut.Children.Add(fade);
-
-      Content = root;
+      return progress;
    }
 
 
@@ -133,12 +167,22 @@ public sealed partial class SplashOverlay : UserControl
          Grid.SetColumnSpan(overlay, Math.Max(grid.ColumnDefinitions.Count, 1));
       }
       host.Children.Add(overlay);
-      overlay.DispatcherQueue.TryEnqueue(async () =>
-      {
-         await Task.Delay(settings.SplashMilliseconds);
-         await overlay.DismissAsync();
-      });
+      ///////////////////////////////////////////////////////////////////////////////
+      // start the countdown through the dispatcher queue, not directly: the queue //
+      // runs it on the UI thread with its synchronization context in place, so    //
+      // the fade after the delay also runs on the UI thread                       //
+      ///////////////////////////////////////////////////////////////////////////////
+      overlay.DispatcherQueue.TryEnqueue(() => _ = overlay.DismissAfterAsync(settings.SplashMilliseconds));
       return overlay;
+   }
+
+
+
+   /// <summary>Waits <paramref name="milliseconds"/>, then fades the overlay out.</summary>
+   private async Task DismissAfterAsync(int milliseconds)
+   {
+      await Task.Delay(milliseconds);
+      await DismissAsync();
    }
 
 
@@ -168,6 +212,7 @@ public sealed partial class SplashOverlay : UserControl
 
 
 
+   /// <summary>Centers an element horizontally and adds it to the panel.</summary>
    private static void AddCentered(Panel panel, FrameworkElement element)
    {
       element.HorizontalAlignment = HorizontalAlignment.Center;

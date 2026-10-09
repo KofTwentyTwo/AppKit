@@ -9,8 +9,10 @@ using System.Reflection.Emit;
 
 namespace KofTwentyTwo.AppKit.Tests;
 
+/// <summary>Tests for app identity: id validation, defaults, and derived names.</summary>
 public class AppInfoTests
 {
+   /// <summary>Id: accepts valid ids.</summary>
    [Theory]
    [InlineData("gclo")]
    [InlineData("my-app-2")]
@@ -23,6 +25,7 @@ public class AppInfoTests
 
 
 
+   /// <summary>Id: rejects invalid ids.</summary>
    [Theory]
    [InlineData("")]
    [InlineData("Gclo")]
@@ -33,11 +36,12 @@ public class AppInfoTests
    public void Id_RejectsInvalidIds(string? id)
    {
       ArgumentException ex = Assert.Throws<ArgumentException>(() => new AppInfo { Id = id!, DisplayName = "X" });
-      Assert.Equal("Id", ex.ParamName);
+      Assert.Equal("value", ex.ParamName);
    }
 
 
 
+   /// <summary>DataDirectoryVariable: is upper snake case of id.</summary>
    [Fact]
    public void DataDirectoryVariable_IsUpperSnakeCaseOfId()
    {
@@ -46,6 +50,7 @@ public class AppInfoTests
 
 
 
+   /// <summary>Defaults: are empty and brand is set.</summary>
    [Fact]
    public void Defaults_AreEmptyAndBrandIsSet()
    {
@@ -67,6 +72,7 @@ public class AppInfoTests
 
 
 
+   /// <summary>AllProperties: round trip.</summary>
    [Fact]
    public void AllProperties_RoundTrip()
    {
@@ -94,8 +100,10 @@ public class AppInfoTests
 
 
 
+/// <summary>Tests for parsing brand colors.</summary>
 public class ArgbColorTests
 {
+   /// <summary>Parse: six digits is opaque.</summary>
    [Fact]
    public void Parse_SixDigits_IsOpaque()
    {
@@ -104,6 +112,7 @@ public class ArgbColorTests
 
 
 
+   /// <summary>Parse: eight digits keeps alpha.</summary>
    [Fact]
    public void Parse_EightDigits_KeepsAlpha()
    {
@@ -112,6 +121,7 @@ public class ArgbColorTests
 
 
 
+   /// <summary>Components: are exposed.</summary>
    [Fact]
    public void Components_AreExposed()
    {
@@ -121,6 +131,7 @@ public class ArgbColorTests
 
 
 
+   /// <summary>TryParse: rejects malformed.</summary>
    [Theory]
    [InlineData(null)]
    [InlineData("")]
@@ -135,6 +146,7 @@ public class ArgbColorTests
 
 
 
+   /// <summary>Parse: malformed throws.</summary>
    [Fact]
    public void Parse_Malformed_Throws()
    {
@@ -144,36 +156,40 @@ public class ArgbColorTests
 
 
 
+/// <summary>Tests for the per-user data paths and the data-directory override.</summary>
 public class AppPathsTests
 {
-   private static readonly AppInfo App = new() { Id = "my-app", DisplayName = "My App" };
+   private static readonly AppInfo s_app = new() { Id = "my-app", DisplayName = "My App" };
 
 
 
+   /// <summary>DataRoot: defaults to local app data.</summary>
    [Fact]
    public void DataRoot_DefaultsToLocalAppData()
    {
-      var paths = new AppPaths(App, _ => null);
+      var paths = new AppPaths(s_app, _ => null);
       string expected = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "my-app");
       Assert.Equal(expected, paths.DataRoot);
    }
 
 
 
+   /// <summary>DataRoot: empty override uses default.</summary>
    [Fact]
    public void DataRoot_EmptyOverride_UsesDefault()
    {
-      var paths = new AppPaths(App, _ => "");
+      var paths = new AppPaths(s_app, _ => "");
       Assert.EndsWith("my-app", paths.DataRoot, StringComparison.Ordinal);
    }
 
 
 
+   /// <summary>DataRoot: honors override variable.</summary>
    [Fact]
    public void DataRoot_HonorsOverrideVariable()
    {
       string? asked = null;
-      var paths = new AppPaths(App, name =>
+      var paths = new AppPaths(s_app, name =>
       {
          asked = name;
          return @"D:\portable";
@@ -187,6 +203,7 @@ public class AppPathsTests
 
 
 
+   /// <summary>PublicConstructor: reads the real environment.</summary>
    [Fact]
    public void PublicConstructor_ReadsTheRealEnvironment()
    {
@@ -196,6 +213,7 @@ public class AppPathsTests
 
 
 
+   /// <summary>Constructor: null app throws.</summary>
    [Fact]
    public void Constructor_NullApp_Throws()
    {
@@ -205,8 +223,10 @@ public class AppPathsTests
 
 
 
+/// <summary>Tests for the build identity text and prerelease detection.</summary>
 public class BuildVersionTests
 {
+   /// <summary>Format: shortens commit metadata.</summary>
    [Theory]
    [InlineData(null, "unknown")]
    [InlineData("  ", "unknown")]
@@ -222,6 +242,7 @@ public class BuildVersionTests
 
 
 
+   /// <summary>IsPrerelease: looks only at the version part.</summary>
    [Theory]
    [InlineData(null, false)]
    [InlineData("1.2.3", false)]
@@ -235,6 +256,7 @@ public class BuildVersionTests
 
 
 
+   /// <summary>Describe: reads informational version.</summary>
    [Fact]
    public void Describe_ReadsInformationalVersion()
    {
@@ -245,6 +267,7 @@ public class BuildVersionTests
 
 
 
+   /// <summary>Describe: falls back to assembly version.</summary>
    [Fact]
    public void Describe_FallsBackToAssemblyVersion()
    {
@@ -255,6 +278,7 @@ public class BuildVersionTests
 
 
 
+   /// <summary>Describe: no version attributes is zero version.</summary>
    [Fact]
    public void Describe_NoVersionAttributes_IsZeroVersion()
    {
@@ -265,6 +289,7 @@ public class BuildVersionTests
 
 
 
+   /// <summary>NullAssembly: throws.</summary>
    [Fact]
    public void NullAssembly_Throws()
    {
@@ -274,7 +299,8 @@ public class BuildVersionTests
 
 
 
-   private static Assembly Emit(string? informationalVersion, Version? version)
+   /// <summary>Emits an in-memory assembly with the given informational and assembly versions, so every fallback branch can be tested.</summary>
+   private static AssemblyBuilder Emit(string? informationalVersion, Version? version)
    {
       var name = new AssemblyName("Emitted" + Guid.NewGuid().ToString("N")) { Version = version };
       var builder = AssemblyBuilder.DefineDynamicAssembly(name, AssemblyBuilderAccess.Run);

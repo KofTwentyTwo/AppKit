@@ -33,39 +33,3 @@ public interface IActivityLog
    /// <summary>Full path of the file new entries are currently appended to.</summary>
    string CurrentLogFilePath { get; }
 }
-
-
-
-/// <summary>An <see cref="IActivityLog"/> that discards everything.</summary>
-public sealed class NullActivityLog : IActivityLog
-{
-   /// <summary>The shared instance.</summary>
-   public static NullActivityLog Instance { get; } = new();
-
-   /// <inheritdoc/>
-   public string LogDirectory => "";
-
-   /// <inheritdoc/>
-   public string CurrentLogFilePath => "";
-
-
-
-   /// <inheritdoc/>
-   public void Info(string message)
-   {
-   }
-
-
-
-   /// <inheritdoc/>
-   public void Warning(string message)
-   {
-   }
-
-
-
-   /// <inheritdoc/>
-   public void Error(string message, Exception? exception = null)
-   {
-   }
-}

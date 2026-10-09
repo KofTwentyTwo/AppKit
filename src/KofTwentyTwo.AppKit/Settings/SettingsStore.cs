@@ -8,16 +8,6 @@ using System.Text.Json.Serialization.Metadata;
 
 
 namespace KofTwentyTwo.AppKit.Settings;
-
-/// <summary>Settings that repair out-of-range or missing values after loading.</summary>
-public interface ISanitizable
-{
-   /// <summary>Clamps, defaults, and validates every value in place.</summary>
-   void Sanitize();
-}
-
-
-
 /// <summary>
 /// Loads and saves a settings object as indented JSON. Takes a source-generated
 /// <see cref="JsonTypeInfo{T}"/> so trimmed Release publishes need no reflection.
@@ -105,6 +95,7 @@ public sealed class SettingsStore<T>
 
 
 
+   /// <summary>Deletes a file if it can; used to clean up the temporary file after a failed save.</summary>
    private static void TryDelete(string path)
    {
       try

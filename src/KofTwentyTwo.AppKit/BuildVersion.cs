@@ -88,6 +88,7 @@ public static class BuildVersion
 
 
 
+   /// <summary>The informational version the build stamped (tag version plus the SourceLink commit), falling back to the assembly version.</summary>
    private static string? InformationalVersion(Assembly assembly)
        => assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
            ?? assembly.GetName().Version?.ToString();

@@ -83,6 +83,7 @@ public sealed class AboutWindow : Window
 
 
 
+   /// <summary>The brand header: the splash look in miniature, with the name, tagline, and build version.</summary>
    private static Border Header(AppInfo app, Assembly? assembly)
    {
       var title = new StackPanel { Orientation = Orientation.Horizontal };
@@ -116,11 +117,13 @@ public sealed class AboutWindow : Window
 
 
 
+   /// <summary>A bold section heading.</summary>
    private static TextBlock Heading(string text)
        => new() { Text = text, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 16, 0, 0) };
 
 
 
+   /// <summary>A wrapped paragraph with the given space above it.</summary>
    private static TextBlock Paragraph(string text, double top = 12)
        => new() { Text = text, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, top, 0, 0) };
 }

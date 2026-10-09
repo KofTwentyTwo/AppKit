@@ -34,7 +34,7 @@ public sealed partial record AppInfo
          {
             throw new ArgumentException(
                 $"App id '{value}' is invalid: use lowercase letters, digits, and dashes, starting with a letter or digit.",
-                nameof(Id));
+                nameof(value));
          }
          _id = value;
       }
@@ -87,34 +87,7 @@ public sealed partial record AppInfo
 
 
 
-   [GeneratedRegex("^[a-z0-9][a-z0-9-]*$")]
+   /// <summary>The app id grammar: lowercase letters, digits, and dashes, starting with a letter or digit. Source-generated, with a match timeout as a guard.</summary>
+   [GeneratedRegex("^[a-z0-9][a-z0-9-]*$", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
    private static partial Regex IdPattern();
-}
-
-
-
-/// <summary>A third-party component credited in the About screen.</summary>
-/// <param name="Name">Component name, e.g. "Velopack".</param>
-/// <param name="License">License name, e.g. "MIT License".</param>
-public sealed record Attribution(string Name, string License);
-
-
-
-/// <summary>
-/// Brand look for the splash and About header: a diagonal two-stop gradient behind
-/// white type, plus the app-relative paths of the vector mark and window icon.
-/// </summary>
-public sealed record AppBrand
-{
-   /// <summary>Top-left gradient color, "#RRGGBB" or "#AARRGGBB".</summary>
-   public string GradientStart { get; init; } = "#3B4CCA";
-
-   /// <summary>Bottom-right gradient color, "#RRGGBB" or "#AARRGGBB".</summary>
-   public string GradientEnd { get; init; } = "#2A2F8F";
-
-   /// <summary>Vector mark, relative to the app directory.</summary>
-   public string IconSvgPath { get; init; } = "Assets/Brand/app-icon.svg";
-
-   /// <summary>Window and taskbar icon, relative to the app directory.</summary>
-   public string IconIcoPath { get; init; } = "Assets/Brand/app.ico";
 }

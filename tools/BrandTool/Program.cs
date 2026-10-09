@@ -22,10 +22,11 @@ internal static class Program
    private const double Box = 512;
    private const double TileInset = 48;
    private const double TileRadius = 104;
-   private static readonly int[] IconSizes = [16, 20, 24, 32, 40, 48, 64, 128, 256];
+   private static readonly int[] s_iconSizes = [16, 20, 24, 32, 40, 48, 64, 128, 256];
 
 
 
+   /// <summary>Entry point: reads the options, then writes app-icon.svg and a multi-size app.ico to the output folder.</summary>
    [STAThread]
    private static int Main(string[] args)
    {
@@ -44,13 +45,14 @@ internal static class Program
 
       Directory.CreateDirectory(outDir);
       File.WriteAllText(Path.Combine(outDir, "app-icon.svg"), Svg(spec));
-      WriteIco(Path.Combine(outDir, "app.ico"), IconSizes.Select(size => Png(spec, size)).ToList(), IconSizes);
+      WriteIco(Path.Combine(outDir, "app.ico"), s_iconSizes.Select(size => Png(spec, size)).ToList(), s_iconSizes);
       Console.WriteLine($"Wrote app-icon.svg and app.ico to {Path.GetFullPath(outDir)}");
       return 0;
    }
 
 
 
+   /// <summary>Parses --name value pairs into a case-insensitive dictionary.</summary>
    private static Dictionary<string, string> Parse(string[] args)
    {
       var options = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -63,6 +65,7 @@ internal static class Program
 
 
 
+   /// <summary>The mark as SVG text: the rounded gradient tile and the white stroked glyph.</summary>
    private static string Svg(MarkSpec spec)
        => $"""
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
@@ -81,6 +84,7 @@ internal static class Program
 
 
 
+   /// <summary>Renders the mark with WPF as a PNG of the given pixel size.</summary>
    private static byte[] Png(MarkSpec spec, int size)
    {
       var visual = new DrawingVisual();
@@ -106,7 +110,7 @@ internal static class Program
 
 
    /// <summary>Writes an .ico whose frames are embedded PNGs (supported since Windows Vista).</summary>
-   private static void WriteIco(string path, IReadOnlyList<byte[]> pngs, IReadOnlyList<int> sizes)
+   private static void WriteIco(string path, List<byte[]> pngs, int[] sizes)
    {
       using var writer = new BinaryWriter(File.Create(path));
       writer.Write((ushort)0);           // reserved
@@ -133,6 +137,7 @@ internal static class Program
 
 
 
+   /// <summary>Parses a #RRGGBB or #AARRGGBB string into a WPF color.</summary>
    private static Color ToColor(string hex)
    {
       var color = ArgbColor.Parse(hex);
@@ -141,5 +146,6 @@ internal static class Program
 
 
 
+   /// <summary>The mark definition: gradient colors, the glyph's SVG path data, and its stroke width.</summary>
    private sealed record MarkSpec(string Start, string End, string Glyph, double Stroke);
 }

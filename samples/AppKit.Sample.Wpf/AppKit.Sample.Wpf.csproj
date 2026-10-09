@@ -15,7 +15,7 @@
    </PropertyGroup>
 
    <ItemGroup>
-      <Compile Include="..\Shared\SampleApp.cs" Link="SampleApp.cs" />
+      <Compile Include="..\Shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
       <Content Include="..\Shared\Brand\app.ico" Link="Assets\Brand\app.ico" CopyToOutputDirectory="PreserveNewest" />
    </ItemGroup>
 

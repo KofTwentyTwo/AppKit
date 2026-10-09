@@ -15,6 +15,7 @@ namespace AppKit.Sample.WinUI;
 /// </summary>
 public static class Program
 {
+   /// <summary>Runs Velopack&apos;s install and update hooks first, then starts the WinUI application (the XAML-generated Main is disabled for this).</summary>
    [STAThread]
    private static void Main()
    {

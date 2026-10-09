@@ -86,11 +86,13 @@ public sealed class FileActivityLog : IActivityLog
 
 
 
+   /// <summary>The log file for one day.</summary>
    private string FilePathFor(DateOnly day)
        => Path.Combine(LogDirectory, $"{_filePrefix}-{day.ToString(DateFormat, CultureInfo.InvariantCulture)}.log");
 
 
 
+   /// <summary>Appends one entry under the lock, pruning old files on the first write of a day. Never throws: a logging failure must not take down the operation it describes.</summary>
    private void Write(string level, string message, Exception? exception)
    {
       try

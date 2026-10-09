@@ -15,6 +15,7 @@ namespace KofTwentyTwo.AppKit.UiTests;
 [Collection("Desktop")]
 public class SampleAppTests
 {
+   /// <summary>Splash: shows then dismisses itself.</summary>
    [Theory]
    [InlineData(SampleKind.WinUI)]
    [InlineData(SampleKind.Wpf)]
@@ -27,6 +28,7 @@ public class SampleAppTests
 
 
 
+   /// <summary>About: shows the build version.</summary>
    [Theory]
    [InlineData(SampleKind.WinUI)]
    [InlineData(SampleKind.Wpf)]
@@ -42,6 +44,7 @@ public class SampleAppTests
 
 
 
+   /// <summary>UnhandledException: is logged and the app survives.</summary>
    [Theory]
    [InlineData(SampleKind.WinUI)]
    [InlineData(SampleKind.Wpf)]
@@ -58,6 +61,7 @@ public class SampleAppTests
 
 
 
+   /// <summary>ActivityLog: opens a window showing the log.</summary>
    [Theory]
    [InlineData(SampleKind.WinUI)]
    [InlineData(SampleKind.Wpf)]
@@ -72,6 +76,7 @@ public class SampleAppTests
 
 
 
+   /// <summary>ThemeChoice: is saved.</summary>
    [Theory]
    [InlineData(SampleKind.WinUI)]
    [InlineData(SampleKind.Wpf)]
@@ -86,6 +91,7 @@ public class SampleAppTests
 
 
 
+   /// <summary>CheckForUpdates: in a loose build says updates need an install.</summary>
    [Theory]
    [InlineData(SampleKind.WinUI)]
    [InlineData(SampleKind.Wpf)]
@@ -102,6 +108,7 @@ public class SampleAppTests
 
 
 
+/// <summary>UI tests share one desktop, so the collection never runs in parallel.</summary>
 [CollectionDefinition("Desktop", DisableParallelization = true)]
 public class DesktopCollectionDefinition
 {

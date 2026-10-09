@@ -176,24 +176,28 @@ public sealed class CredentialManagerVault : ISecretVault
 
 
 
+   /// <summary>advapi32 CredWriteW: creates or replaces a credential.</summary>
    [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
    [return: MarshalAs(UnmanagedType.Bool)]
    private static extern bool CredWriteW(ref CredentialW credential, uint flags);
 
 
 
+   /// <summary>advapi32 CredReadW: reads a credential into a buffer that must be released with CredFree.</summary>
    [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
    [return: MarshalAs(UnmanagedType.Bool)]
    private static extern bool CredReadW(string targetName, uint type, uint flags, out IntPtr credential);
 
 
 
+   /// <summary>advapi32 CredDeleteW: deletes a credential.</summary>
    [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
    [return: MarshalAs(UnmanagedType.Bool)]
    private static extern bool CredDeleteW(string targetName, uint type, uint flags);
 
 
 
+   /// <summary>advapi32 CredFree: releases a buffer returned by CredReadW.</summary>
    [DllImport("advapi32.dll", ExactSpelling = true)]
    private static extern void CredFree(IntPtr buffer);
 }

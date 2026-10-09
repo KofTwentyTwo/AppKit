@@ -111,12 +111,22 @@ public sealed class SplashOverlay : UserControl
          Grid.SetColumnSpan(overlay, Math.Max(grid.ColumnDefinitions.Count, 1));
       }
       host.Children.Add(overlay);
-      overlay.Dispatcher.InvokeAsync(async () =>
-      {
-         await Task.Delay(settings.SplashMilliseconds);
-         await overlay.DismissAsync();
-      });
+      ///////////////////////////////////////////////////////////////////////////////
+      // start the countdown through the dispatcher, not directly: an app may call //
+      // this before Application.Run, when no synchronization context exists yet,  //
+      // and the fade must run on the UI thread                                    //
+      ///////////////////////////////////////////////////////////////////////////////
+      _ = overlay.Dispatcher.InvokeAsync(() => overlay.DismissAfterAsync(settings.SplashMilliseconds));
       return overlay;
+   }
+
+
+
+   /// <summary>Waits <paramref name="milliseconds"/>, then fades the overlay out.</summary>
+   private async Task DismissAfterAsync(int milliseconds)
+   {
+      await Task.Delay(milliseconds);
+      await DismissAsync();
    }
 
 

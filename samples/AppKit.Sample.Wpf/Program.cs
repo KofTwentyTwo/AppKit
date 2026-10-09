@@ -19,6 +19,7 @@ public static class Program
 
 
 
+   /// <summary>Runs Velopack&apos;s install and update hooks first, then creates the WPF application with AppKit&apos;s crash net and theme and shows the main window.</summary>
    [STAThread]
    private static void Main()
    {
