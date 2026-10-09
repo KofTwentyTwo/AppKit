@@ -34,7 +34,7 @@ jobs:
         run: dotnet build AppKit.slnx -p:Platform=x64 -warnaserror
 
       - name: Run unit tests with coverage
-        run: dotnet test tests/KofTwentyTwo.AppKit.Tests --no-build -p:Platform=x64 --settings coverage.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
+        run: dotnet test tests/KofTwentyTwo.AppKit.Tests --no-build --settings coverage.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
 
       - name: Enforce 100% line coverage (AppKit, AppKit.Updates)
         shell: pwsh
@@ -77,7 +77,7 @@ jobs:
         run: dotnet build AppKit.slnx -p:Platform=x64
 
       - name: Run UI tests
-        run: dotnet test tests/KofTwentyTwo.AppKit.UiTests --no-build -p:Platform=x64
+        run: dotnet test tests/KofTwentyTwo.AppKit.UiTests --no-build
 
   format:
     name: Format (style gate)
