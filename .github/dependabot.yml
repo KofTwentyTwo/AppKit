@@ -1,35 +1,37 @@
-# Weekly dependency updates for NuGet packages and the GitHub Actions pinned in
-# .github/workflows. Minor/patch bumps are grouped into a single PR to keep the
-# noise down; major bumps still arrive as individual PRs for closer review.
+# Dependabot for a KofTwentyTwo repository: copy to .github/dependabot.yml and keep
+# the ecosystems the repository uses. Updates are grouped weekly. A 7-day cooldown
+# lets the community catch a compromised release before it reaches us; security
+# updates are not delayed by the cooldown.
 version: 2
 updates:
-  - package-ecosystem: nuget
-    directory: "/"
-    # Updates land on dev like all other work and reach main via the gated PR flow.
-    target-branch: dev
-    schedule:
-      interval: weekly
-      day: monday
-      time: "06:00"
-      timezone: America/New_York
-    groups:
-      nuget-minor-patch:
-        applies-to: version-updates
-        patterns:
-          - "*"
-        update-types:
-          - minor
-          - patch
-
+  # Always: keeps SHA-pinned actions and reusable workflows current (K22-CI-11).
   - package-ecosystem: github-actions
-    directory: "/"
-    target-branch: dev
+    directory: /
     schedule:
       interval: weekly
       day: monday
-      time: "06:00"
-      timezone: America/New_York
+    cooldown:
+      default-days: 7
     groups:
-      actions-all:
-        patterns:
-          - "*"
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
+
+  # .NET: NuGet, including Directory.Packages.props and packages.lock.json.
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: build
+
+  # Other ecosystems (npm, pip/uv, cargo, gomod, swift, maven, gradle, terraform,
+  # docker): copy the block above and change package-ecosystem and directory.

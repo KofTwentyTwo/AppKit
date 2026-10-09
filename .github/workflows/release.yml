@@ -1,104 +1,76 @@
-# Release pipeline, triggered by pushing a tag that starts with 'v'.
+# NuGet package release for a KofTwentyTwo repository (K22-CI-30, K22-REL-*).
+# Copy to .github/workflows/release.yml. Pushing a protected v* tag builds, tests,
+# packs, generates SBOMs, attests, and publishes the GitHub release through the shared
+# reusable workflow, then pushes the packages to nuget.org.
 #
-#   v1.2.3        -> stable GitHub release + nuget.org
-#   v1.2.3-beta.1 -> GitHub prerelease + nuget.org prerelease
-#
-# Every package is built once, attested (SLSA build provenance), attached to the
-# GitHub release with a SHA256SUMS file, then pushed to nuget.org when the
-# NUGET_API_KEY secret is configured. See docs/RELEASING.md.
-name: Release
+# nuget.org trusted publishing (one-time owner setup, no API key stored anywhere):
+#   nuget.org → your profile → Trusted Publishing → Add policy:
+#     Repository Owner: KofTwentyTwo
+#     Repository:       AppKit
+#     Workflow File:    release.yml        (THIS file's name, not the reusable workflow's)
+#     Environment:      release
+#   then set the repository variable NUGET_USER to your nuget.org profile name.
+# The publish job must stay in this file: nuget.org checks that the OIDC token's
+# job_workflow_ref belongs to this repository, which a job inside the reusable
+# workflow (in KofTwentyTwo/standards) can never satisfy.
+name: release
 
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   release:
-    name: Build, attest, and publish
-    runs-on: windows-latest
-    timeout-minutes: 45
+    uses: KofTwentyTwo/standards/.github/workflows/release-nuget.yml@58215c9fbcebd620f34194003db518560583b5b7 # feat/dotnet-workflows
     permissions:
-      contents: write      # create the GitHub release and upload assets
-      id-token: write      # sign the provenance attestation (Sigstore OIDC)
-      attestations: write  # store the attestation on the repository
-    env:
-      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      contents: write      # create and publish the GitHub release
+      id-token: write      # sign attestations
+      attestations: write  # store attestations
+    with:
+      solution: AppKit.slnx
+      platform: x64
+      coverage-packages: KofTwentyTwo.AppKit,KofTwentyTwo.AppKit.Updates
+      test-projects: |
+        tests/KofTwentyTwo.AppKit.Tests
+
+  publish:
+    name: publish (nuget.org)
+    needs: release
+    if: vars.NUGET_USER != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: release
+    permissions:
+      contents: read
+      attestations: read # verify the attestations before pushing
+      id-token: write    # trusted publishing token exchange
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Set up .NET SDK
-        uses: actions/setup-dotnet@v5
+      - name: Download packages
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          global-json-file: global.json
+          name: packages
+          path: packages
 
-      - name: Derive version from tag
-        id: version
-        shell: pwsh
-        run: |
-          $tag = $env:GITHUB_REF_NAME
-          # Strict semver 2.0; build metadata ('+...') is rejected.
-          $semver = '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?$'
-          if ($tag -notmatch $semver) {
-            Write-Error "Tag '$tag' is not a release tag. Expected vMAJOR.MINOR.PATCH with an optional prerelease suffix, e.g. v1.2.3 or v1.2.3-beta.1."
-            exit 1
-          }
-          $version = $tag.Substring(1)
-          $prerelease = $version.Contains('-')
-          Write-Host "Tag: $tag | Version: $version | Prerelease: $prerelease"
-          Add-Content $env:GITHUB_OUTPUT "version=$version"
-          Add-Content $env:GITHUB_OUTPUT "prerelease=$($prerelease.ToString().ToLower())"
-
-      # The same gates as CI: a release can never ship what CI would reject.
-      - name: Build (x64, warnings as errors)
-        run: dotnet build AppKit.slnx -c Release -p:Platform=x64 -p:Version=${{ steps.version.outputs.version }} -warnaserror
-
-      - name: Unit tests with coverage
-        run: dotnet test tests/KofTwentyTwo.AppKit.Tests -c Release --no-build --settings coverage.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
-
-      - name: Enforce 100% line coverage
-        shell: pwsh
-        run: ./build/Assert-Coverage.ps1 -ResultsDirectory TestResults -Packages KofTwentyTwo.AppKit, KofTwentyTwo.AppKit.Updates
-
-      - name: Pack
-        run: dotnet pack AppKit.slnx -c Release --no-build -p:Platform=x64 -p:Version=${{ steps.version.outputs.version }} -o artifacts/nuget
-
-      - name: Checksums
-        shell: pwsh
-        run: |
-          Push-Location artifacts/nuget
-          Get-ChildItem -File | Sort-Object Name | ForEach-Object {
-            "{0}  {1}" -f (Get-FileHash $_.Name -Algorithm SHA256).Hash.ToLower(), $_.Name
-          } | Set-Content -Path SHA256SUMS -Encoding ascii
-          Get-Content SHA256SUMS
-          Pop-Location
-
-      # Anyone can verify a package came from this workflow at this tag:
-      #   gh attestation verify <file>.nupkg --repo KofTwentyTwo/AppKit
-      - name: Attest build provenance
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-path: 'artifacts/nuget/*.nupkg'
-
-      # Releases are immutable once published, so everything lands on a draft first.
-      - name: Create draft release with packages
-        shell: pwsh
+      # Push only bytes that the shared release workflow built and attested.
+      - name: Verify attestations
         env:
           GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
         run: |
-          $pre = @()
-          if ('${{ steps.version.outputs.prerelease }}' -eq 'true') { $pre = @('--prerelease') }
-          gh release create $env:GITHUB_REF_NAME --draft --verify-tag --title "AppKit ${{ steps.version.outputs.version }}" --generate-notes @pre (Get-ChildItem artifacts/nuget -File).FullName
+          for package in packages/*.nupkg; do
+            gh attestation verify "$package" --repo "$REPOSITORY" --signer-repo KofTwentyTwo/standards
+          done
 
-      - name: Publish the release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release edit $env:GITHUB_REF_NAME --draft=false
+      - name: NuGet login (OIDC to a one-hour API key)
+        id: login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ vars.NUGET_USER }}
 
       - name: Push to nuget.org
-        if: env.NUGET_API_KEY != ''
-        run: dotnet nuget push "artifacts/nuget/*.nupkg" --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: dotnet nuget push "packages/*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate

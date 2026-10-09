@@ -1,101 +1,30 @@
-# Continuous integration: zero-warning build, unit tests with the 100% coverage gate,
-# end-to-end UI tests of the sample apps, package creation, and the formatting gate.
-name: CI
+# .NET build, test, coverage, and format gates (K22-CI-01, K22-CI-02, K22-TEST-10).
+# Produces the required contexts `ci / build-test`, `ci / format`, and `ci / ui-tests`.
+# The coverage gate holds the two UI-framework-free packages at 100% line coverage.
+name: ci
 
 on:
-  push:
-    branches: [main, dev]
   pull_request:
+  push:
+    branches: [main]
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  build-test:
-    name: Build and test (x64)
-    runs-on: windows-latest
-    timeout-minutes: 30
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Set up .NET SDK
-        uses: actions/setup-dotnet@v5
-        with:
-          global-json-file: global.json
-
-      # -warnaserror also fails on NuGetAudit warnings, so a known-vulnerable
-      # dependency breaks the build.
-      - name: Build solution (x64, warnings as errors)
-        run: dotnet build AppKit.slnx -p:Platform=x64 -warnaserror
-
-      - name: Run unit tests with coverage
-        run: dotnet test tests/KofTwentyTwo.AppKit.Tests --no-build --settings coverage.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
-
-      - name: Enforce 100% line coverage (AppKit, AppKit.Updates)
-        shell: pwsh
-        run: ./build/Assert-Coverage.ps1 -ResultsDirectory TestResults -Packages KofTwentyTwo.AppKit, KofTwentyTwo.AppKit.Updates
-
-      - name: Upload coverage
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: coverage-cobertura
-          path: TestResults/**/coverage.cobertura.xml
-          if-no-files-found: warn
-
-      # Proves every package still packs (metadata, README, dependencies) on every PR,
-      # not only at release time.
-      - name: Pack
-        run: dotnet pack AppKit.slnx -c Release -p:Platform=x64 -o artifacts/nuget
-
-      - name: Upload packages
-        uses: actions/upload-artifact@v7
-        with:
-          name: nuget-packages
-          path: artifacts/nuget/*
-
-  ui-tests:
-    # FlaUI drives the real WinUI and WPF sample apps on the runner's desktop session.
-    name: UI end-to-end tests (x64)
-    runs-on: windows-latest
-    timeout-minutes: 30
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Set up .NET SDK
-        uses: actions/setup-dotnet@v5
-        with:
-          global-json-file: global.json
-
-      - name: Build solution (x64)
-        run: dotnet build AppKit.slnx -p:Platform=x64
-
-      - name: Run UI tests
-        run: dotnet test tests/KofTwentyTwo.AppKit.UiTests --no-build
-
-  format:
-    name: Format (style gate)
-    runs-on: windows-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Set up .NET SDK
-        uses: actions/setup-dotnet@v5
-        with:
-          global-json-file: global.json
-
-      - name: Restore
-        run: dotnet restore AppKit.slnx -p:Platform=x64
-
-      # --severity error gates real issues (analyzer errors and error-severity style
-      # rules), not whitespace preferences.
-      - name: Verify formatting
-        run: dotnet format AppKit.slnx --verify-no-changes --severity error --no-restore
+  ci:
+    uses: KofTwentyTwo/standards/.github/workflows/dotnet.yml@58215c9fbcebd620f34194003db518560583b5b7 # feat/dotnet-workflows
+    permissions:
+      contents: read
+    with:
+      solution: AppKit.slnx
+      platform: x64
+      coverage-packages: KofTwentyTwo.AppKit,KofTwentyTwo.AppKit.Updates
+      test-projects: |
+        tests/KofTwentyTwo.AppKit.Tests
+      ui-test-projects: |
+        tests/KofTwentyTwo.AppKit.UiTests
+      pack: true
