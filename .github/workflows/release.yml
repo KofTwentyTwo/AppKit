@@ -58,7 +58,7 @@ jobs:
         run: dotnet build AppKit.slnx -c Release -p:Platform=x64 -p:Version=${{ steps.version.outputs.version }} -warnaserror
 
       - name: Unit tests with coverage
-        run: dotnet test tests/KofTwentyTwo.AppKit.Tests -c Release --no-build -p:Platform=x64 --settings coverage.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
+        run: dotnet test tests/KofTwentyTwo.AppKit.Tests -c Release --no-build --settings coverage.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
 
       - name: Enforce 100% line coverage
         shell: pwsh
