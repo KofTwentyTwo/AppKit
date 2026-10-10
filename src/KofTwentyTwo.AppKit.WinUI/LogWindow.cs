@@ -147,7 +147,7 @@ public sealed partial class LogWindow : Window
       LogSnapshot snapshot = LogTail.Read(_log.CurrentLogFilePath);
       _lastLength = snapshot.Length;
       bool errorsOnly = _errorsOnly.IsChecked == true;
-      _logText.Text = LogTail.ToDisplayText(errorsOnly ? LogTail.ErrorsOnly(snapshot.Lines) : snapshot.Lines, errorsOnly);
+      _logText.Text = LogTail.ToDisplayText(errorsOnly ? LogTail.ErrorsOnly(snapshot.Lines) : snapshot.Lines, errorsOnly, snapshot.IsTruncated);
 
       _scroll.UpdateLayout();
       _scroll.ChangeView(null, _scroll.ScrollableHeight, null, disableAnimation: true);

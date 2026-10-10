@@ -4,6 +4,12 @@ Release versions follow [Semantic Versioning](https://semver.org/). All four App
 packages release together. Unreleased changes are listed before tagging; published
 versions retain their original package contents.
 
+## Unreleased
+
+- Bound each log-viewer refresh to 1 MiB of trailing input plus the encoding header,
+  including huge single lines. Preserve supported BOM encodings and show a notice
+  when older input is omitted. Existing two-argument log-reader calls remain compatible.
+
 ## 0.1.0 — 2026-10-10
 
 Initial public release for .NET 10 Windows desktop applications:

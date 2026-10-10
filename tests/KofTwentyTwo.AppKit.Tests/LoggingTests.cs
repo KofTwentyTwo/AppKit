@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+using System.Text;
 using KofTwentyTwo.AppKit.Logging;
 
 
@@ -206,6 +207,103 @@ public sealed class LogTailTests : IDisposable
       LogSnapshot snapshot = LogTail.Read(path, maxLines: 2);
       Assert.Equal(["3", "4"], snapshot.Lines);
       Assert.Equal(new FileInfo(path).Length, snapshot.Length);
+      Assert.False(snapshot.IsTruncated);
+   }
+
+
+
+   /// <summary>Seeking to the bounded tail preserves the final entries of a huge sparse file.</summary>
+   [Fact]
+   public void Read_HugeFile_ReturnsOrderedTailWithinDefaultBudget()
+   {
+      string path = _temp.File("huge.log");
+      const long Length = 128 * 1024 * 1024;
+      byte[] ending = Encoding.UTF8.GetBytes("\nolder\nlast one\nlast two\n");
+      using(var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+      {
+         stream.SetLength(Length);
+         stream.Position = Length - ending.Length;
+         stream.Write(ending);
+      }
+
+      LogSnapshot snapshot = LogTail.Read(path, maxLines: 2);
+      Assert.Equal(["last one", "last two"], snapshot.Lines);
+      Assert.Equal(Length, snapshot.Length);
+      Assert.True(snapshot.IsTruncated);
+   }
+
+
+
+   /// <summary>The byte budget bounds a single line and avoids allocating a queue for an arbitrary line count.</summary>
+   [Fact]
+   public void Read_HugeSingleLine_BoundsTextAndQueueAllocation()
+   {
+      string path = _temp.File("one-line.log");
+      const int Length = LogTail.DefaultMaxBytes * 4;
+      using(var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+      {
+         stream.SetLength(Length);
+         stream.Position = Length - 1;
+         stream.WriteByte((byte)'x');
+      }
+
+      LogSnapshot snapshot = LogTail.Read(path, maxLines: int.MaxValue);
+      string line = Assert.Single(snapshot.Lines);
+      Assert.Equal(LogTail.DefaultMaxBytes, line.Length);
+      Assert.EndsWith("x", line, StringComparison.Ordinal);
+      Assert.Equal(Length, snapshot.Length);
+      Assert.True(snapshot.IsTruncated);
+      Assert.Equal(["\0\0\0x"], LogTail.Read(path, maxLines: 1, maxBytes: 4).Lines);
+   }
+
+
+
+   /// <summary>BOM detection and truncated code-unit alignment preserve UTF-8, UTF-16 and UTF-32 in both byte orders.</summary>
+   [Theory]
+   [InlineData(0)]
+   [InlineData(1)]
+   [InlineData(2)]
+   [InlineData(3)]
+   [InlineData(4)]
+   [InlineData(5)]
+   public void Read_SupportedEncodings_PreservesTailAndAlignment(int format)
+   {
+      Encoding encoding = format switch
+      {
+         0 => new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+         1 => new UTF8Encoding(encoderShouldEmitUTF8Identifier: true),
+         2 => Encoding.Unicode,
+         3 => Encoding.BigEndianUnicode,
+         4 => Encoding.UTF32,
+         _ => new UTF32Encoding(bigEndian: true, byteOrderMark: true),
+      };
+      string path = _temp.File("encoded.log");
+      const string Tail = "one π\ntwo λ\n";
+      File.WriteAllText(path, "skip prefix\n" + Tail, encoding);
+
+      LogSnapshot full = LogTail.Read(path);
+      Assert.Equal(File.ReadAllLines(path), full.Lines, StringComparer.Ordinal);
+      Assert.False(full.IsTruncated);
+      LogSnapshot bounded = LogTail.Read(path, maxLines: 2, maxBytes: encoding.GetByteCount(Tail) + 1);
+      Assert.Equal(["one π", "two λ"], bounded.Lines);
+      Assert.Equal(new FileInfo(path).Length, bounded.Length);
+      Assert.True(bounded.IsTruncated);
+   }
+
+
+
+   /// <summary>Empty files and BOM-only files contain no phantom entries.</summary>
+   [Fact]
+   public void Read_EmptyOrPreambleOnly_IsEmpty()
+   {
+      string path = _temp.File("empty.log");
+      File.WriteAllBytes(path, []);
+      Assert.Empty(LogTail.Read(path).Lines);
+      File.WriteAllBytes(path, Encoding.UTF32.GetPreamble());
+      LogSnapshot snapshot = LogTail.Read(path);
+      Assert.Empty(snapshot.Lines);
+      Assert.Equal(4, snapshot.Length);
+      Assert.False(snapshot.IsTruncated);
    }
 
 
@@ -229,6 +327,8 @@ public sealed class LogTailTests : IDisposable
    public void Read_RejectsNonPositiveLineCounts()
    {
       Assert.Throws<ArgumentOutOfRangeException>(() => LogTail.Read("x", 0));
+      Assert.Throws<ArgumentOutOfRangeException>(() => LogTail.Read("x", 1, 3));
+      Assert.Throws<ArgumentOutOfRangeException>(() => LogTail.Read("x", 1, LogTail.DefaultMaxBytes + 1));
    }
 
 
@@ -260,6 +360,19 @@ public sealed class LogTailTests : IDisposable
       Assert.Equal("No log entries yet.", LogTail.ToDisplayText([], errorsOnly: false));
       Assert.Equal("No errors logged.", LogTail.ToDisplayText([], errorsOnly: true));
       Assert.Equal("a" + Environment.NewLine + "b", LogTail.ToDisplayText(["a", "b"], errorsOnly: false));
+   }
+
+
+
+   /// <summary>Both viewer modes disclose when the byte limit omitted input, including a partial first line.</summary>
+   [Theory]
+   [InlineData(false, "tail")]
+   [InlineData(true, "No errors logged.")]
+   public void ToDisplayText_TruncatedInput_ShowsNotice(bool errorsOnly, string expected)
+   {
+      string text = LogTail.ToDisplayText(errorsOnly ? [] : ["tail"], errorsOnly, isTruncated: true);
+      Assert.StartsWith("Showing a bounded log tail;", text, StringComparison.Ordinal);
+      Assert.EndsWith(expected, text, StringComparison.Ordinal);
    }
 
 

@@ -135,7 +135,7 @@ public sealed class LogWindow : Window
       LogSnapshot snapshot = LogTail.Read(_log.CurrentLogFilePath);
       _lastLength = snapshot.Length;
       bool errorsOnly = _errorsOnly.IsChecked == true;
-      _logText.Text = LogTail.ToDisplayText(errorsOnly ? LogTail.ErrorsOnly(snapshot.Lines) : snapshot.Lines, errorsOnly);
+      _logText.Text = LogTail.ToDisplayText(errorsOnly ? LogTail.ErrorsOnly(snapshot.Lines) : snapshot.Lines, errorsOnly, snapshot.IsTruncated);
       _logText.ScrollToEnd();
    }
 }
