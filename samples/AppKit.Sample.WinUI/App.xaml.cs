@@ -5,6 +5,7 @@
 
 using KofTwentyTwo.AppKit.Logging;
 using KofTwentyTwo.AppKit.WinUI;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 
 
@@ -17,6 +18,9 @@ public partial class App : Application
 
    /// <summary>The app-wide activity log.</summary>
    internal static IActivityLog Log { get; } = FileActivityLog.ForApp(SampleApp.Info, SampleApp.Paths);
+
+   /// <summary>The shared structured logger, including scopes.</summary>
+   internal static ILogger Logger { get; } = Log.AsLogger();
 
 
 
@@ -34,8 +38,14 @@ public partial class App : Application
    /// <summary>Logs the start and opens the main window.</summary>
    protected override void OnLaunched(LaunchActivatedEventArgs args)
    {
-      Log.Info($"{SampleApp.Info.DisplayName} started.");
+      LogStarted(Logger, SampleApp.Info.DisplayName);
       _window = new MainWindow();
       _window.Activate();
    }
+
+
+
+   /// <summary>Records app identity as a field without formatting it into the template.</summary>
+   [LoggerMessage(100, LogLevel.Information, "{AppName} started.")]
+   private static partial void LogStarted(ILogger logger, string appName);
 }

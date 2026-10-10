@@ -5,13 +5,14 @@
 
 using KofTwentyTwo.AppKit.Logging;
 using KofTwentyTwo.AppKit.Settings;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 
 
 namespace KofTwentyTwo.AppKit.WinUI;
 
 /// <summary>App-level wiring every WinUI app repeats: crash net and theme.</summary>
-public static class WinUIShell
+public static partial class WinUIShell
 {
    /// <summary>
    /// Last-resort net: an exception escaping an async void event handler is rethrown
@@ -30,7 +31,7 @@ public static class WinUIShell
          e.Handled = true;
          try
          {
-            log()?.Error($"Unhandled UI exception: {e.Message}", e.Exception);
+            LogUnhandledException((log() ?? NullActivityLog.Instance).AsLogger(), e.Exception, e.Message);
          }
          catch
          {
@@ -39,6 +40,12 @@ public static class WinUIShell
          }
       };
    }
+
+
+
+   /// <summary>Retains exception details and a separate error field for the crash net.</summary>
+   [LoggerMessage(10, LogLevel.Error, "Unhandled UI exception: {Error}")]
+   private static partial void LogUnhandledException(ILogger logger, Exception exception, string error);
 
 
 

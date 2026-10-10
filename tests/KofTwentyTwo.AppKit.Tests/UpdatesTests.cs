@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+using System.Text.Json;
 using KofTwentyTwo.AppKit.Updates;
 
 
@@ -179,7 +180,7 @@ public class UpdateCoordinatorTests
       var prompter = new RecordingPrompter();
       await Coordinator(prompter).CheckInteractivelyAsync();
       Assert.Equal("Could not check for updates.\noffline", prompter.Messages.Single().Message);
-      Assert.Equal("WARN Update check failed: offline", _log.Entries.Single());
+      AssertLogEntry(_log.Entries.Single(), "WARN", "Update check failed: offline", "Update check failed: {Error}", ("Error", "offline"));
    }
 
 
@@ -224,7 +225,7 @@ public class UpdateCoordinatorTests
       await Coordinator(prompter).CheckInteractivelyAsync();
       Assert.Equal(1, _updates.ApplyCalls);
       Assert.Empty(prompter.Messages);
-      Assert.Equal("INFO Installing update v2.0.0.", _log.Entries.Single());
+      AssertLogEntry(_log.Entries.Single(), "INFO", "Installing update v2.0.0.", "Installing update v{Version}.", ("Version", "2.0.0"));
    }
 
 
@@ -238,7 +239,7 @@ public class UpdateCoordinatorTests
       var prompter = new RecordingPrompter(confirm: true);
       await Coordinator(prompter).CheckInteractivelyAsync();
       Assert.Equal((UpdateText.FailedTitle, "disk full"), prompter.Messages.Single());
-      Assert.Equal("ERROR Update to v2.0.0 failed: disk full", _log.Entries.Last());
+      AssertLogEntry(_log.Entries.Last(), "ERROR", "Update to v2.0.0 failed: disk full", "Update to v{Version} failed: {Error}", ("Version", "2.0.0"), ("Error", "disk full"));
    }
 
 
@@ -259,7 +260,7 @@ public class UpdateCoordinatorTests
 
       Assert.Empty(prompter.Messages);
       Assert.Empty(prompter.Confirmations);
-      Assert.Equal("WARN Startup update check failed: offline", _log.Entries.Single());
+      AssertLogEntry(_log.Entries.Single(), "WARN", "Startup update check failed: offline", "Startup update check failed: {Error}", ("Error", "offline"));
    }
 
 
@@ -273,7 +274,7 @@ public class UpdateCoordinatorTests
       await Coordinator(prompter).CheckQuietlyAsync();
       Assert.Single(prompter.Confirmations);
       Assert.Equal(1, _updates.ApplyCalls);
-      Assert.Equal("INFO Update available: v2.0.0.", _log.Entries[0]);
+      AssertLogEntry(_log.Entries[0], "INFO", "Update available: v2.0.0.", "Update available: v{Version}.", ("Version", "2.0.0"));
    }
 
 
@@ -296,5 +297,21 @@ public class UpdateCoordinatorTests
       Assert.Throws<ArgumentNullException>(() => new UpdateCoordinator(null!, prompter, "x"));
       Assert.Throws<ArgumentNullException>(() => new UpdateCoordinator(_updates, null!, "x"));
       Assert.Throws<ArgumentException>(() => new UpdateCoordinator(_updates, prompter, " "));
+   }
+
+
+
+   /// <summary>Checks rendered compatibility and separate named fields at the existing sink boundary.</summary>
+   private static void AssertLogEntry(string entry, string level, string message, string template, params (string Name, string Value)[] properties)
+   {
+      Assert.StartsWith(level + " ", entry, StringComparison.Ordinal);
+      using var document = JsonDocument.Parse(entry[(level.Length + 1)..]);
+      JsonElement record = document.RootElement;
+      Assert.Equal(message, record.GetProperty("Message").GetString());
+      Assert.Equal(template, record.GetProperty("MessageTemplate").GetString());
+      foreach((string name, string value) in properties)
+      {
+         Assert.Equal(value, record.GetProperty("Properties").GetProperty(name).GetString());
+      }
    }
 }

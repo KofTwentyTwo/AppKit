@@ -8,12 +8,13 @@ using System.Windows;
 using System.Windows.Media.Imaging;
 using KofTwentyTwo.AppKit.Logging;
 using KofTwentyTwo.AppKit.Settings;
+using Microsoft.Extensions.Logging;
 
 
 namespace KofTwentyTwo.AppKit.Wpf;
 
 /// <summary>App-level wiring every WPF app repeats: crash net and theme.</summary>
-public static class WpfShell
+public static partial class WpfShell
 {
    /// <summary>
    /// Last-resort net: records exceptions that escape UI event handlers and keeps the
@@ -75,11 +76,17 @@ public static class WpfShell
    {
       try
       {
-         log()?.Error($"{message}: {exception.Message}", exception);
+         LogUnhandledException((log() ?? NullActivityLog.Instance).AsLogger(), exception, message, exception.Message);
       }
       catch
       {
          // Logging must never turn a survivable error fatal.
       }
    }
+
+
+
+   /// <summary>Retains the crash-net source, error and full exception independently.</summary>
+   [LoggerMessage(10, LogLevel.Error, "{Source}: {Error}")]
+   private static partial void LogUnhandledException(ILogger logger, Exception exception, string source, string error);
 }

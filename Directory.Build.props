@@ -54,7 +54,7 @@
         -p:Version=<tag-version>, which overrides both parts. SourceLink appends the
         git commit as "+<sha>" on AssemblyInformationalVersion. -->
    <PropertyGroup>
-      <VersionPrefix>0.1.1</VersionPrefix>
+      <VersionPrefix>0.2.0</VersionPrefix>
       <VersionSuffix>dev</VersionSuffix>
    </PropertyGroup>
 

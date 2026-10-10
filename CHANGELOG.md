@@ -4,11 +4,16 @@ Release versions follow [Semantic Versioning](https://semver.org/). All four App
 packages release together. Unreleased changes are listed before tagging; published
 versions retain their original package contents.
 
-## Unreleased
+## Unreleased — 0.2.0
 
 - Bound each log-viewer refresh to 1 MiB of trailing input plus the encoding header,
   including huge single lines. Preserve supported BOM encodings and show a notice
   when older input is omitted. Existing two-argument log-reader calls remain compatible.
+- Add an `ILogger` adapter for activity logs with original message templates, typed
+  scalar fields, event IDs, and asynchronous scopes stored as JSON. Existing
+  `IActivityLog` methods and third-party implementations remain compatible. Foundation
+  update/crash events and samples use source-generated log methods. The official
+  `Microsoft.Extensions.Logging.Abstractions` package is a new runtime dependency.
 
 ## 0.1.0 — 2026-10-10
 

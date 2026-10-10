@@ -154,6 +154,9 @@ in [the Scorecard assessment](docs/security/scorecard.md). The
 [OpenSSF Best Practices worksheet](docs/security/openssf-best-practices.md) tracks
 evidence and outstanding owner attestations; no certification is claimed yet.
 
+Unreleased 0.2.0 adds [structured logging](src/KofTwentyTwo.AppKit/README.md#structured-logging)
+and bounded log reads; these capabilities are not part of the published 0.1.0 packages.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Releases: [docs/RELEASING.md](docs/RELEASING.md).

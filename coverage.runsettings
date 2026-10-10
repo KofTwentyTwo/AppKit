@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Coverage contract for the 100% gate: every hand-written line in the framework-free
      packages counts. Excluded, with intent:
-     - GeneratedCodeAttribute: source-generated regexes and JSON contexts.
+     - GeneratedCodeAttribute: source-generated regexes, JSON contexts and log methods.
      - ExcludeFromCodeCoverageAttribute: thin pass-throughs to Velopack that need an
        installed app or the network (each carries a justification at its declaration).
      The WinUI and WPF packages are not measured: their views need a live compositor and

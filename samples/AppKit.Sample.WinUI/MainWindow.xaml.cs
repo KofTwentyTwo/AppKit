@@ -6,6 +6,7 @@
 using KofTwentyTwo.AppKit.Settings;
 using KofTwentyTwo.AppKit.Updates;
 using KofTwentyTwo.AppKit.WinUI;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 
 
@@ -104,7 +105,7 @@ public sealed partial class MainWindow : Window
    /// <summary>Writes an INFO entry, to show logging.</summary>
    private void LogInfo_Click(object sender, RoutedEventArgs e)
    {
-      App.Log.Info("The user pressed 'Write a log entry'.");
+      LogUserAction(App.Logger);
       StatusText.Text = "Wrote an INFO entry.";
    }
 
@@ -119,10 +120,22 @@ public sealed partial class MainWindow : Window
       }
       catch(InvalidOperationException ex)
       {
-         App.Log.Error("Sample operation failed.", ex);
+         LogSampleFailure(App.Logger, ex);
          StatusText.Text = "Wrote an ERROR entry with its stack trace.";
       }
    }
+
+
+
+   /// <summary>Records the sample button interaction.</summary>
+   [LoggerMessage(101, LogLevel.Information, "The user pressed 'Write a log entry'.")]
+   private static partial void LogUserAction(ILogger logger);
+
+
+
+   /// <summary>Records a handled sample failure with its full exception.</summary>
+   [LoggerMessage(102, LogLevel.Error, "Sample operation failed.")]
+   private static partial void LogSampleFailure(ILogger logger, Exception exception);
 
 
 

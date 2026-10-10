@@ -98,6 +98,12 @@ UTF-8/UTF-16/UTF-32 tails in both byte orders. Refreshes seek directly to a boun
 window; they do not scan older content. A partial first visible line is identified
 by the viewer's truncation notice.
 
+`StructuredLoggingTests.cs` checks original templates, typed fields, JSON escaping,
+full exception details, and concurrent asynchronous scope isolation. Structured
+events use the standard .NET logging abstraction with an explicit scalar/JSON value
+policy; the adapter does not reflect over arbitrary objects. Logging templates,
+fields and scopes remain subject to the prohibition on secrets and personal data.
+
 Repository change controls and their single-maintainer limitation are assessed in
 [scorecard.md](scorecard.md). The automated review-record check validates an
 acknowledged review of the current PR commit; it does not replace human review.
