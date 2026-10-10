@@ -8,7 +8,9 @@ versions retain their original package contents.
 
 - Bound each log-viewer refresh to 1 MiB of trailing input plus the encoding header,
   including huge single lines. Preserve supported BOM encodings and show a notice
-  when older input is omitted. Existing two-argument log-reader calls remain compatible.
+  when older input is omitted, including a persistent toolbar notice while following
+  new entries. WPF follows the newest entry on first open and subsequent refreshes.
+  Existing two-argument log-reader calls remain compatible.
 - Add an `ILogger` adapter for activity logs with original message templates, typed
   scalar fields, event IDs, and asynchronous scopes stored as JSON. Existing
   `IActivityLog` methods and third-party implementations remain compatible. Foundation

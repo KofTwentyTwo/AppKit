@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
+using System.Drawing;
 using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Capturing;
 
 
 namespace KofTwentyTwo.AppKit.UiTests;
@@ -72,6 +74,52 @@ public class SampleAppTests
       session.WaitFor(
           () => session.TopLevelWindows().FirstOrDefault(w => string.Equals(w.Name, "AppKit Sample — Activity log", StringComparison.Ordinal)),
           "the activity log window");
+   }
+
+
+
+   /// <summary>Huge logs retain the newest entries and a visible notice even while Follow scrolls to the end.</summary>
+   [Theory]
+   [InlineData(SampleKind.WinUI)]
+   [InlineData(SampleKind.Wpf)]
+   public void ActivityLog_HugeFile_ShowsLatestEntryAndPersistentLimitNotice(SampleKind kind)
+   {
+      using var session = new AppSession(kind);
+      string path = Directory.GetFiles(Path.Combine(session.DataDirectory, "logs"), "*.log").Single();
+      using(var writer = new StreamWriter(path, append: true))
+      {
+         string padding = new('x', 80);
+         for(int index = 0; index < 30_000; index++)
+         {
+            writer.WriteLine("2026-10-10 12:00:00.000 [INFO] Older entry " + padding);
+         }
+         writer.WriteLine("2026-10-10 12:00:01.000 [INFO] Latest entry marker");
+      }
+      session.InvokeMenuItem("Help", "ActivityLogMenuItem");
+      AutomationElement text = session.WaitForElement("LogText");
+      string contents = kind == SampleKind.WinUI ? text.Name : text.AsTextBox().Text;
+      Assert.Contains("Latest entry marker", contents, StringComparison.Ordinal);
+      Assert.StartsWith("Showing a bounded log tail;", contents, StringComparison.Ordinal);
+      Assert.True(contents.Length < 1024 * 1024);
+      session.WaitFor(
+          () => text.Patterns.Text.Pattern.GetVisibleRanges().Any(range => range.GetText(-1).Contains("Latest entry marker", StringComparison.Ordinal)) ? text : null,
+          "the newest log entry to be visible with Follow enabled");
+      AutomationElement notice = session.WaitForElement("LogTruncationNotice");
+      Assert.Equal("Older log content omitted", notice.Name);
+      Assert.False(notice.IsOffscreen);
+      Assert.False(session.App.HasExited);
+
+      // Optional local review evidence; images are restricted to the test app's window.
+      string? screenshots = Environment.GetEnvironmentVariable("APPKIT_UITEST_SCREENSHOT_DIR");
+      if(!string.IsNullOrWhiteSpace(screenshots))
+      {
+         Directory.CreateDirectory(screenshots);
+         AutomationElement window = session.TopLevelWindows().Single(w => string.Equals(w.Name, "AppKit Sample — Activity log", StringComparison.Ordinal));
+         window.AsWindow().SetForeground();
+         Rectangle bounds = window.BoundingRectangle;
+         using CaptureImage capture = Capture.ElementRectangle(window, new System.Drawing.Rectangle(12, 12, bounds.Width - 24, bounds.Height - 24));
+         capture.ToFile(Path.Combine(screenshots, $"LogTail-{kind}.png"));
+      }
    }
 
 
