@@ -19,12 +19,42 @@ does not support signing, so AppKit's next release deliberately fails preflight 
 the reviewed shared change is published and the caller is updated. Do not sign or
 repack packages after their checksums, attestations or immutable release are created.
 
-Verified locally: 21 signing/package checks and six administrative-boundary tests;
+Verified locally: 26 signing/package checks and six administrative-boundary tests;
 Microsoft's `Microsoft.ArtifactSigning.Client` 1.0.146 author/repository signatures;
 real `signtool verify /pa /all /v` on the installed Microsoft-signed SignTool; rejection
 of an unsigned AppKit DLL. **No AppKit Azure signature or signed release is proven.**
 The attempted CLI device login ended with authorization pending. No Azure identities,
 credentials, roles or GitHub signing variables were changed.
+
+## Reference from gclo
+
+The inspected gclo release environment uses tenant
+`4ebeb0ad-5782-487a-a1b4-5080255774cf`, the subscription above, account
+`kof22signing`, profile `releases` and `https://eus.codesigning.azure.net`.
+These are observed configuration values, not a deployed-resource lookup. Its
+publisher check uses `James Maes`; obtain the full certificate subject from the
+profile before configuring AppKit. Do not copy gclo's client ID without checking
+AppKit's federated trust and profile-scoped signer permission.
+
+[Standards v1.0.0](https://github.com/KofTwentyTwo/standards/releases/tag/v1.0.0)
+publishes gclo's Velopack signing fix: preserve valid existing signatures, allow
+more time for signing, and invoke SignTool/dlib through `--signTemplate`.
+Its NuGet builder still lacks the signing inputs AppKit needs. The isolated
+AppKit builder additionally selects explicit owned files, refuses invalid
+existing signatures, verifies each newly signed helper, and checks final
+publisher, timestamp, archive bytes and embedded installer payload before
+publication. Missing third-party dependencies now fail archive verification,
+with only Velopack's default runtime-helper exclusions allowed.
+
+Five regression tests exercise the actual signing wrapper without credentials.
+The inspected [gclo beta.3 run](https://github.com/KofTwentyTwo/gclo/actions/runs/38087007507)
+passed OIDC, signing, packaging and its pre-publication signature check. The run
+ultimately failed because its separate post-publication verification job could
+not read the publisher variable. Require all signing variables in the protected
+release environment before building; do not defer this check until publication.
+Successful gclo signing is reference evidence; it does not prove AppKit's
+identity, binaries or final release. Keep signing access confined to trusted
+release jobs and retain the required real AppKit verification below.
 
 ## Verify the existing resource
 

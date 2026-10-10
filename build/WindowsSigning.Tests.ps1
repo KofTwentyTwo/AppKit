@@ -172,6 +172,62 @@ Describe 'Signature and distributed-byte gates' `
          { Assert-WindowsDistribution -Directory $assets -ManifestPath $manifest -ExpectedSubject 'CN=Verified Publisher' -SignTool Invoke-ProbeSignTool } | Should -Throw '*Owned binary missing*'
       }
 
+      It 'rejects a missing dependency from <Archive>' -TestCases @(
+         @{ Archive = 'Owned-Portable.zip'; Head = 'app' },
+         @{ Archive = 'Owned-1.0.0-full.nupkg'; Head = 'app' },
+         @{ Archive = 'Owned-cli-win-x64.zip'; Head = 'cli' }
+      ) `
+      {
+         param($Archive, $Head)
+         $root = Join-Path $TestDrive ('missing-dependency-' + [guid]::NewGuid().ToString('N'))
+         $publish = Join-Path $root 'publish'
+         $assets = Join-Path $root 'assets'
+         $packed = Join-Path $root 'packed'
+         New-Item -ItemType Directory -Path "$publish/$Head", $assets, $packed | Out-Null
+         Set-Content -LiteralPath "$publish/$Head/Owned.dll" -Value 'signed app'
+         Set-Content -LiteralPath "$publish/$Head/Microsoft.dll" -Value 'third-party'
+         $manifest = Join-Path $root 'manifest.json'
+         New-WindowsSigningCatalog -Root $publish -Patterns @("$Head/Owned.dll") -CatalogPath (Join-Path $root 'catalog.txt') -ManifestPath $manifest -PreserveOtherBinaries
+         Copy-Item -LiteralPath "$publish/$Head/Owned.dll" -Destination $packed
+         [IO.Compression.ZipFile]::CreateFromDirectory($packed, (Join-Path $assets $Archive))
+         { Assert-WindowsDistribution -Directory $assets -ManifestPath $manifest -ExpectedSubject 'CN=Verified Publisher' -SignTool Invoke-ProbeSignTool } | Should -Throw '*Third-party binary missing*'
+      }
+
+      It 'allows only the default excluded foreign runtime helpers to be omitted' `
+      {
+         $root = Join-Path $TestDrive 'excluded-runtime'
+         $publish = Join-Path $root 'publish'
+         $assets = Join-Path $root 'assets'
+         $packed = Join-Path $root 'packed'
+         New-Item -ItemType Directory -Path "$publish/app", $assets, $packed | Out-Null
+         Set-Content -LiteralPath "$publish/app/Owned.dll" -Value 'signed app'
+         Set-Content -LiteralPath "$publish/app/Microsoft.dll" -Value 'third-party'
+         Set-Content -LiteralPath "$publish/app/createdump.exe" -Value 'excluded helper'
+         Set-Content -LiteralPath "$publish/app/Owned.vshost.exe" -Value 'excluded host'
+         $manifest = Join-Path $root 'manifest.json'
+         New-WindowsSigningCatalog -Root $publish -Patterns @('app/Owned.dll') -CatalogPath (Join-Path $root 'catalog.txt') -ManifestPath $manifest -PreserveOtherBinaries
+         Copy-Item -LiteralPath "$publish/app/Owned.dll", "$publish/app/Microsoft.dll" -Destination $packed
+         [IO.Compression.ZipFile]::CreateFromDirectory($packed, (Join-Path $assets 'Owned-Portable.zip'))
+         { Assert-WindowsDistribution -Directory $assets -ManifestPath $manifest -ExpectedSubject 'CN=Verified Publisher' -SignTool Invoke-ProbeSignTool } | Should -Not -Throw
+      }
+
+      It 'rejects changed dependency bytes in the final archive' `
+      {
+         $root = Join-Path $TestDrive 'changed-dependency'
+         $publish = Join-Path $root 'publish'
+         $assets = Join-Path $root 'assets'
+         $packed = Join-Path $root 'packed'
+         New-Item -ItemType Directory -Path "$publish/app", $assets, $packed | Out-Null
+         Set-Content -LiteralPath "$publish/app/Owned.dll" -Value 'signed app'
+         Set-Content -LiteralPath "$publish/app/Microsoft.dll" -Value 'third-party'
+         $manifest = Join-Path $root 'manifest.json'
+         New-WindowsSigningCatalog -Root $publish -Patterns @('app/Owned.dll') -CatalogPath (Join-Path $root 'catalog.txt') -ManifestPath $manifest -PreserveOtherBinaries
+         Copy-Item -LiteralPath "$publish/app/Owned.dll" -Destination $packed
+         Set-Content -LiteralPath (Join-Path $packed 'Microsoft.dll') -Value 'changed'
+         [IO.Compression.ZipFile]::CreateFromDirectory($packed, (Join-Path $assets 'Owned-Portable.zip'))
+         { Assert-WindowsDistribution -Directory $assets -ManifestPath $manifest -ExpectedSubject 'CN=Verified Publisher' -SignTool Invoke-ProbeSignTool } | Should -Throw '*Distributed binary changed*'
+      }
+
       It 'accepts the exact signed bytes shipped in a package' `
       {
          $root = Join-Path $TestDrive 'valid'

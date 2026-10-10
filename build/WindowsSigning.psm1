@@ -209,19 +209,28 @@ function Assert-WindowsDistribution
                {
                   Assert-WindowsSignature -Files @($copy.FullName) -ExpectedSubject $ExpectedSubject -SignTool $SignTool
                   $null = $seen.Add($entry.path)
-                  $null = $archiveSeen.Add($entry.path)
                }
+               $null = $archiveSeen.Add($entry.path)
             }
          }
-         $required = @($owned | Where-Object {
+         $required = @($entries | Where-Object {
                if($archive.Name -like '*-cli-*.zip') { return $_.relativePath.StartsWith('cli/') }
-               if($archive.Name -like '*-Portable.zip' -or $archive.Name -like '*-full.nupkg') { return $_.relativePath.StartsWith('app/') }
+               if($archive.Name -like '*-Portable.zip' -or $archive.Name -like '*-full.nupkg')
+               {
+                  # Match Velopack's default exclusions for runtime helpers.
+                  if(-not $_.owned -and $_.relativePath -match '(?:^|/)createdump[^/]*|\.vshost\.') { return $false }
+                  return $_.relativePath.StartsWith('app/')
+               }
                $packageId = [regex]::Escape([IO.Path]::GetFileNameWithoutExtension($_.path))
-               return $archive.Name -match "^$packageId\.[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\.nupkg$"
+               return $_.owned -and $archive.Name -match "^$packageId\.[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\.nupkg$"
             })
          foreach($entry in $required)
          {
-            if(-not $archiveSeen.Contains($entry.path)) { throw "Owned binary missing from $($archive.Name): $($entry.relativePath)." }
+            if(-not $archiveSeen.Contains($entry.path))
+            {
+               $kind = if($entry.owned) { 'Owned' } else { 'Third-party' }
+               throw "$kind binary missing from $($archive.Name): $($entry.relativePath)."
+            }
          }
          # Velopack creates these branded helpers before its signing hook.
          $updates = @($files | Where-Object { $_.Name -in 'Update.exe', 'Squirrel.exe' -or $_.Name -like '*_ExecutionStub.exe' } | ForEach-Object FullName)
