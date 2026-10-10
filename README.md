@@ -16,7 +16,7 @@ shipped in a 1.0 release first.
 | --- | --- |
 | **Tier** | Product ([scope](https://github.com/KofTwentyTwo/standards/blob/main/policies/README.md#scope)) |
 | **Standards** | Adopting [KofTwentyTwo standards](https://github.com/KofTwentyTwo/standards) (pre-v1.0); this README will say *Conforms to KofTwentyTwo standards v1.0* once the conformance checker passes |
-| **Latest release** | [Releases](https://github.com/KofTwentyTwo/AppKit/releases/latest) (none yet) |
+| **Latest release** | [v0.1.0](https://github.com/KofTwentyTwo/AppKit/releases/tag/v0.1.0) |
 
 ## Packages
 
@@ -148,6 +148,11 @@ Only the latest released minor version receives fixes, including security fixes;
 
 Report vulnerabilities privately; see [SECURITY.md](SECURITY.md). The attack surface is
 described in the [threat model](docs/security/threat-model.md).
+
+Repository-practice findings and the single-maintainer review policy are documented
+in [the Scorecard assessment](docs/security/scorecard.md). The
+[OpenSSF Best Practices worksheet](docs/security/openssf-best-practices.md) tracks
+evidence and outstanding owner attestations; no certification is claimed yet.
 
 ## Contributing
 

@@ -6,9 +6,8 @@ Pushing a protected `v*` tag on `main` runs [`.github/workflows/release.yml`](..
 which calls the shared `release-nuget.yml` workflow in KofTwentyTwo/standards. All four
 packages always release together under one version.
 
-> **Status:** the shared workflows are pinned to a commit on KofTwentyTwo/standards
-> `main` while the standards are pre-release; they move to a release tag's commit once
-> KofTwentyTwo/standards publishes `v1.0.0` (Dependabot proposes the update).
+The shared workflows are pinned to the published standards `v0.1.2` commit.
+Dependabot proposes updates; review the workflow changes before moving the pin.
 
 ## Versioning
 
@@ -30,10 +29,12 @@ are `<prefix>-dev`. Bump the prefix right after each release, in a pull request.
 
 ## What a release does
 
-The shared workflow (SLSA Build L3: the build definition lives in KofTwentyTwo/standards,
-not here):
+The caller first verifies that the tagged commit belongs to `main`, then reruns
+build, unit tests, coverage, formatting, UI tests, security scans, CodeQL and script
+checks. All must pass before publication. The shared workflow then builds the
+release separately (SLSA Build L3: its build definition lives in KofTwentyTwo/standards):
 
-1. Validates the tag and re-runs every gate that guards `main`: locked restore,
+1. Validates strict SemVer and repeats locked restore,
    zero-warning build, unit tests, and the 100% coverage gate.
 2. Packs the four packages and their symbol packages.
 3. Generates a CycloneDX 1.6 SBOM per package (Syft, from `packages.lock.json`) and
@@ -55,8 +56,8 @@ nuget.org through **trusted publishing** (OIDC; no API key is stored anywhere).
    - Workflow file: `release.yml`
    - Environment: `release`
 2. **Repository variable** `NUGET_USER` (Settings → Secrets and variables → Actions →
-   Variables): your nuget.org profile name. Without it the `publish` job is skipped and
-   the release still succeeds on GitHub.
+   Variables): your nuget.org profile name. Missing configuration fails preflight
+   before a GitHub release is created.
 3. **Environment** `release` (Settings → Environments) with a deployment rule that allows
    only tags matching `v*`.
 
@@ -66,6 +67,9 @@ nuget.org through **trusted publishing** (OIDC; no API key is stored anywhere).
    `pwsh ../standards/tools/Test-RepoConformance.ps1 -Repository KofTwentyTwo/AppKit -LocalPath .`
 2. For a minor or major release, open a release checklist issue from the standards
    template and complete it (security assessment, threat model review, scan results).
+   Update [CHANGELOG.md](../CHANGELOG.md) with user-facing changes, upgrade impact,
+   and advisory IDs for any publicly known vulnerability fixed. Include or link those
+   notes in the GitHub release; generated PR lists alone may omit important changes.
 3. Tag `main` and push the tag:
 
    ```powershell

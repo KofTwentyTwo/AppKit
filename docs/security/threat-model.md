@@ -71,7 +71,7 @@ flowchart LR
 | T3 | Update flow | Denial of service | A failing or slow update check crashes or blocks the app | Medium | Medium | Every update member is guarded and returns errors as values; the check runs after startup | Mitigated |
 | T4 | Secrets | Information disclosure | A token leaks through logs, settings, or memory | Medium | High | Secrets only in the Credential Manager; never in settings or logs; the pinned plaintext buffer is cleared after writing | Mitigated |
 | T5 | settings.json | Tampering | A crafted settings file sets out-of-range values or crashes parsing | Low | Low | Source-generated JSON parsing inside a catch-all; values sanitized; failure means defaults | Mitigated |
-| T6 | Log files | Tampering / denial of service | A huge or crafted log file hangs the log viewer | Low | Low | The viewer reads only the last 2,000 lines; the entry regex has a match timeout | Mitigated |
+| T6 | Log files | Tampering / denial of service | A huge or crafted log file hangs the log viewer | Low | Low | The viewer retains the last 2,000 lines and the entry regex has a match timeout, but reading still scans the whole file; neither bound limits individual line size | Partially mitigated |
 | T7 | UI thread | Denial of service | An exception escaping an async handler kills the app | Medium | Medium | Crash net logs and handles dispatcher exceptions; one-dialog-at-a-time guard prevents the stowed-exception crash | Mitigated |
 | T8 | Data folder | Elevation of privilege | `<ID>_DATA_DIR` points the app at another location | Low | Low | The variable is set by the same user; the app gains no rights it did not have | Accepted |
 | T9 | Dependencies | Tampering | A compromised package in AppKit's graph | Low | High | Central versions, lock files with locked restore, dependency review, Trivy and OSV-Scanner in CI, Dependabot with a cooldown | Mitigated |
@@ -87,6 +87,16 @@ flowchart LR
   provenance attestations and checksums remain verifiable.
 
 ## 8. Review log
+
+Generated-input regression coverage for T5 and T6 lives in
+`tests/KofTwentyTwo.AppKit.Tests/InputProperties.cs`. Four FsCheck properties each
+run 500 cases in the normal unit suite, checking repair invariants, arbitrary JSON
+and UTF-8 bytes, persistence, and bounded log tails. These bounded tests do not
+establish resilience against unlimited-size files or replace native dependency testing.
+
+Repository change controls and their single-maintainer limitation are assessed in
+[scorecard.md](scorecard.md). The automated review-record check validates an
+acknowledged review of the current PR commit; it does not replace human review.
 
 | Date | Version | Reviewer | Changes |
 | --- | --- | --- | --- |

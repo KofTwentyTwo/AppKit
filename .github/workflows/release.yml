@@ -28,8 +28,72 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout main and tag history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require the tagged commit to be on main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - name: Require NuGet publishing configuration
+        env:
+          NUGET_USER: ${{ vars.NUGET_USER }}
+        run: test -n "$NUGET_USER"
+
+  gates:
+    needs: verify
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  security:
+    needs: verify
+    uses: ./.github/workflows/security.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  codeql:
+    needs: verify
+    uses: ./.github/workflows/codeql.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  review-tests:
+    name: review / tests
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test review validation
+        run: node --test .github/scripts/review-gate.test.cjs
+
+  scripts:
+    needs: verify
+    uses: ./.github/workflows/scripts.yml
+    permissions:
+      contents: read
+
   release:
-    uses: KofTwentyTwo/standards/.github/workflows/release-nuget.yml@ae3df7af77e5a97df231a9f53be9d8ed785ddce5 # main (pre-release)
+    needs: [verify, gates, security, codeql, review-tests, scripts]
+    uses: KofTwentyTwo/standards/.github/workflows/release-nuget.yml@fdf5ed029603c938615a32b1beca3628b8787945 # v0.1.2
     permissions:
       contents: write      # create and publish the GitHub release
       id-token: write      # sign attestations
@@ -44,7 +108,6 @@ jobs:
   publish:
     name: publish (nuget.org)
     needs: release
-    if: vars.NUGET_USER != ''
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     environment: release
