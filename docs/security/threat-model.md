@@ -81,10 +81,23 @@ flowchart LR
 
 - **T8:** another process running as the same user can redirect or read AppKit's data;
   defending against the user's own processes is outside a desktop library's reach.
-- **Unsigned binaries until code signing is available:** apps built on AppKit ship
-  without an Authenticode signature until the KofTwentyTwo signing identity is validated
-  ([exception EX-0002](https://github.com/KofTwentyTwo/standards/blob/main/exceptions/register.md#ex-0002));
-  provenance attestations and checksums remain verifiable.
+- **Previously unsigned releases:** AppKit 0.1.0 was published under
+  [EX-0002](https://github.com/KofTwentyTwo/standards/blob/main/exceptions/register.md#ex-0002).
+  The owner reports completed Azure publisher validation and an active Public Trust
+  profile. CI authentication, profile-scoped permission and signed-byte evidence
+  remain outstanding. The release caller now blocks new publication until the shared
+  signing builder and verified configuration are enabled. See
+  [release signing](../release-signing.md); retain the exception until actual signing
+  and final-artifact verification succeed. Existing provenance remains verifiable.
+
+Signing trust is restricted to `repo:KofTwentyTwo/AppKit:environment:release`, whose
+deployment policy permits `v*` tags. Signing grants use the certificate profile scope;
+the administrative account is never a CI identity. Only explicitly catalogued owned
+DLLs are signed before packing. Verification checks trust, publisher, timestamps and
+SHA256 digests, then checks the exact DLL bytes inside NuGet assets before checksums
+and provenance. The prepared app builder additionally preserves dependency bytes and
+verifies Velopack helpers and the installer's embedded full-package payload. These
+controls are prepared locally; Azure and live CI proof are still required.
 
 ## 8. Review log
 

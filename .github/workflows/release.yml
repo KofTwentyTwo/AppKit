@@ -32,6 +32,7 @@ jobs:
     name: verify
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    environment: release
     permissions:
       contents: read
     steps:
@@ -49,6 +50,26 @@ jobs:
         env:
           NUGET_USER: ${{ vars.NUGET_USER }}
         run: test -n "$NUGET_USER"
+      - name: Require signing integration before publishing another release
+        shell: pwsh
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          ARTIFACT_SIGNING_ENDPOINT: ${{ vars.ARTIFACT_SIGNING_ENDPOINT }}
+          ARTIFACT_SIGNING_ACCOUNT: ${{ vars.ARTIFACT_SIGNING_ACCOUNT }}
+          ARTIFACT_SIGNING_PROFILE: ${{ vars.ARTIFACT_SIGNING_PROFILE }}
+          ARTIFACT_SIGNING_SUBJECT: ${{ vars.ARTIFACT_SIGNING_SUBJECT }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not (Select-String -LiteralPath .github/workflows/release.yml -Pattern '^\s+sign: true\s*$' -Quiet))
+          {
+             throw 'Release signing is required. Publish the prepared standards signing change, update the shared builder pin, and configure sign: true. See docs/release-signing.md.'
+          }
+          foreach ($name in @('AZURE_CLIENT_ID', 'AZURE_TENANT_ID', 'AZURE_SUBSCRIPTION_ID', 'ARTIFACT_SIGNING_ENDPOINT', 'ARTIFACT_SIGNING_ACCOUNT', 'ARTIFACT_SIGNING_PROFILE', 'ARTIFACT_SIGNING_SUBJECT'))
+          {
+             if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) { throw "Missing verified signing variable: $name" }
+          }
 
   gates:
     needs: verify

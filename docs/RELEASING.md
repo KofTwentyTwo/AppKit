@@ -9,6 +9,12 @@ packages always release together under one version.
 The shared workflows are pinned to the published standards `v0.1.2` commit.
 Dependabot proposes updates; review the workflow changes before moving the pin.
 
+New releases currently stop in preflight until the prepared shared Artifact Signing
+builder is published and enabled. Follow [release signing](release-signing.md) to
+verify the existing Azure profile, configure repository-specific OIDC and move the
+builder pin to its published release. No unsigned fallback is permitted for the next
+release; the already published 0.1.0 assets remain immutable.
+
 ## Versioning
 
 The version is the tag without the leading `v`, in strict [semver](https://semver.org).
