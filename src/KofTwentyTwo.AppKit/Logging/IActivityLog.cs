@@ -8,7 +8,9 @@ namespace KofTwentyTwo.AppKit.Logging;
 /// <summary>
 /// Application activity log for human-readable operational events. Implementations
 /// must be safe to call from any thread and must never throw from a logging call;
-/// secrets (tokens, passwords) must never be written to it.
+/// secrets (tokens, passwords) must never be written to it. Use
+/// <see cref="ActivityLogExtensions.AsLogger"/> for structured templates and fields;
+/// these legacy methods remain available for existing consumers and implementations.
 /// </summary>
 public interface IActivityLog
 {

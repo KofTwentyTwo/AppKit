@@ -5,6 +5,7 @@
 
 using KofTwentyTwo.AppKit.Logging;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
@@ -26,6 +27,7 @@ public sealed partial class LogWindow : Window
    private readonly IActivityLog _log;
    private readonly DispatcherTimer _refresh = new() { Interval = s_refreshInterval };
    private readonly TextBlock _pathText = new() { VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, Opacity = 0.7 };
+   private readonly TextBlock _limitNotice = new() { Text = "Older log content omitted", VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed };
    private readonly TextBlock _logText = new() { FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 12, IsTextSelectionEnabled = true, TextWrapping = TextWrapping.NoWrap };
    private readonly ScrollViewer _scroll = new() { HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(12) };
    private readonly ToggleButton _follow = new() { Content = "Follow", IsChecked = true };
@@ -42,6 +44,8 @@ public sealed partial class LogWindow : Window
       ArgumentNullException.ThrowIfNull(app);
       _log = log;
       Title = app.DisplayName + " — Activity log";
+      AutomationProperties.SetAutomationId(_logText, "LogText");
+      AutomationProperties.SetAutomationId(_limitNotice, "LogTruncationNotice");
 
       var copy = new Button { Content = "Copy" };
       var openFolder = new Button { Content = "Open logs folder" };
@@ -60,6 +64,7 @@ public sealed partial class LogWindow : Window
       toolbar.Children.Add(_errorsOnly);
       toolbar.Children.Add(copy);
       toolbar.Children.Add(openFolder);
+      toolbar.Children.Add(_limitNotice);
       toolbar.Children.Add(_pathText);
       _scroll.Content = _logText;
 
@@ -146,8 +151,9 @@ public sealed partial class LogWindow : Window
       _pathText.Text = _log.CurrentLogFilePath; // the day can roll over while the window is open
       LogSnapshot snapshot = LogTail.Read(_log.CurrentLogFilePath);
       _lastLength = snapshot.Length;
+      _limitNotice.Visibility = snapshot.IsTruncated ? Visibility.Visible : Visibility.Collapsed;
       bool errorsOnly = _errorsOnly.IsChecked == true;
-      _logText.Text = LogTail.ToDisplayText(errorsOnly ? LogTail.ErrorsOnly(snapshot.Lines) : snapshot.Lines, errorsOnly);
+      _logText.Text = LogTail.ToDisplayText(errorsOnly ? LogTail.ErrorsOnly(snapshot.Lines) : snapshot.Lines, errorsOnly, snapshot.IsTruncated);
 
       _scroll.UpdateLayout();
       _scroll.ChangeView(null, _scroll.ScrollableHeight, null, disableAnimation: true);

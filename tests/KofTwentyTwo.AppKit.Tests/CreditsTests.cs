@@ -35,6 +35,16 @@ public class CreditsTests
 
 
 
+   /// <summary>A missing email does not introduce a leading separator before repository/website credits.</summary>
+   [Fact]
+   public void ContactLine_NoEmail_OmitsEmptyCredit()
+   {
+      var app = new AppInfo { Id = "sample", DisplayName = "Sample", RepositoryUrl = new Uri("https://github.com/owner/repo") };
+      Assert.Equal("github.com/owner", Credits.ContactLine(app));
+   }
+
+
+
    /// <summary>The owner profile is host/owner for any repository URL, or just the host when the path is empty.</summary>
    [Theory]
    [InlineData(null, null)]

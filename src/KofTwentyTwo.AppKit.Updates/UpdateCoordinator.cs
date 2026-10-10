@@ -5,6 +5,7 @@
 
 using KofTwentyTwo.AppKit.Interaction;
 using KofTwentyTwo.AppKit.Logging;
+using Microsoft.Extensions.Logging;
 
 
 namespace KofTwentyTwo.AppKit.Updates;
@@ -14,12 +15,12 @@ namespace KofTwentyTwo.AppKit.Updates;
 /// <see cref="IUserPrompter"/> so WinUI and WPF apps behave identically and the logic is
 /// unit-tested.
 /// </summary>
-public sealed class UpdateCoordinator
+public sealed partial class UpdateCoordinator
 {
    private readonly IUpdateService _updates;
    private readonly IUserPrompter _prompter;
    private readonly string _appName;
-   private readonly IActivityLog _log;
+   private readonly ILogger _log;
 
 
 
@@ -36,7 +37,7 @@ public sealed class UpdateCoordinator
       _updates = updates;
       _prompter = prompter;
       _appName = appName;
-      _log = log ?? NullActivityLog.Instance;
+      _log = (log ?? NullActivityLog.Instance).AsLogger();
    }
 
 
@@ -56,7 +57,7 @@ public sealed class UpdateCoordinator
       UpdateCheckResult result = await _updates.CheckAsync(cancellationToken).ConfigureAwait(true);
       if(result.Error is not null)
       {
-         _log.Warning($"Update check failed: {result.Error}");
+         LogCheckFailed(_log, result.Error);
          await _prompter.ShowMessageAsync(UpdateText.CheckTitle, UpdateText.CheckFailed(result.Error)).ConfigureAwait(true);
          return;
       }
@@ -86,13 +87,13 @@ public sealed class UpdateCoordinator
       UpdateCheckResult result = await _updates.CheckAsync(cancellationToken).ConfigureAwait(true);
       if(result.Error is not null)
       {
-         _log.Warning($"Startup update check failed: {result.Error}");
+         LogStartupCheckFailed(_log, result.Error);
          return;
       }
 
       if(result.AvailableVersion is not null)
       {
-         _log.Info($"Update available: v{result.AvailableVersion}.");
+         LogUpdateAvailable(_log, result.AvailableVersion);
          await OfferAsync(result.AvailableVersion, cancellationToken).ConfigureAwait(true);
       }
    }
@@ -109,14 +110,44 @@ public sealed class UpdateCoordinator
          return;
       }
 
-      _log.Info($"Installing update v{version}.");
+      LogInstalling(_log, version);
       // On success this exits the process to restart into the new version, so
       // reaching the lines below means the update did not go through.
       string? error = await _updates.DownloadAndApplyAsync(null, cancellationToken).ConfigureAwait(true);
       if(error is not null)
       {
-         _log.Error($"Update to v{version} failed: {error}");
+         LogInstallFailed(_log, version, error);
          await _prompter.ShowMessageAsync(UpdateText.FailedTitle, error).ConfigureAwait(true);
       }
    }
+
+
+
+   /// <summary>Records a failed interactive check with its separate error field.</summary>
+   [LoggerMessage(1, LogLevel.Warning, "Update check failed: {Error}")]
+   private static partial void LogCheckFailed(ILogger logger, string error);
+
+
+
+   /// <summary>Records a failed startup check.</summary>
+   [LoggerMessage(2, LogLevel.Warning, "Startup update check failed: {Error}")]
+   private static partial void LogStartupCheckFailed(ILogger logger, string error);
+
+
+
+   /// <summary>Records the available version independently of the rendered text.</summary>
+   [LoggerMessage(3, LogLevel.Information, "Update available: v{Version}.")]
+   private static partial void LogUpdateAvailable(ILogger logger, string version);
+
+
+
+   /// <summary>Records which version is about to be installed.</summary>
+   [LoggerMessage(4, LogLevel.Information, "Installing update v{Version}.")]
+   private static partial void LogInstalling(ILogger logger, string version);
+
+
+
+   /// <summary>Records the target version and installation failure.</summary>
+   [LoggerMessage(5, LogLevel.Error, "Update to v{Version} failed: {Error}")]
+   private static partial void LogInstallFailed(ILogger logger, string version, string error);
 }

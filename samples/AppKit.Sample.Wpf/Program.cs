@@ -5,17 +5,21 @@
 
 using System.Windows;
 using KofTwentyTwo.AppKit.Logging;
-using KofTwentyTwo.AppKit.Updates;
 using KofTwentyTwo.AppKit.Wpf;
+using Microsoft.Extensions.Logging;
+using Velopack;
 
 
 namespace AppKit.Sample.Wpf;
 
 /// <summary>Entry point: Velopack hooks first, then the WPF application.</summary>
-public static class Program
+public static partial class Program
 {
    /// <summary>The app-wide activity log.</summary>
    internal static IActivityLog Log { get; } = FileActivityLog.ForApp(SampleApp.Info, SampleApp.Paths);
+
+   /// <summary>The shared structured logger, including scopes.</summary>
+   internal static ILogger Logger { get; } = Log.AsLogger();
 
 
 
@@ -23,12 +27,19 @@ public static class Program
    [STAThread]
    private static void Main()
    {
-      VelopackStartup.Run();
+      // vpk checks the entry assembly for this direct call before packaging.
+      VelopackApp.Build().Run();
 
       var app = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
       WpfShell.InstallCrashNet(app, () => Log);
       WpfShell.ApplyTheme(app, SampleApp.SettingsStore.Load().ThemeKind);
-      Log.Info($"{SampleApp.Info.DisplayName} (WPF) started.");
+      LogStarted(Logger, SampleApp.Info.DisplayName);
       app.Run(new MainWindow());
    }
+
+
+
+   /// <summary>Records startup with the app identity as a field.</summary>
+   [LoggerMessage(100, LogLevel.Information, "{AppName} (WPF) started.")]
+   private static partial void LogStarted(ILogger logger, string appName);
 }

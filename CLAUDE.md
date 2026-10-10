@@ -14,13 +14,18 @@ dotnet test tests/KofTwentyTwo.AppKit.Tests --settings coverage.runsettings --co
 ./build/Assert-Coverage.ps1 -ResultsDirectory TestResults -Packages KofTwentyTwo.AppKit,KofTwentyTwo.AppKit.Updates
 dotnet test tests/KofTwentyTwo.AppKit.UiTests        # launches both sample apps on the desktop
 dotnet format AppKit.slnx --verify-no-changes --severity warn --no-restore
+npm ci --ignore-scripts
+npm run lint
+npm test
+Import-Module PSScriptAnalyzer -RequiredVersion 1.25.0
+Invoke-ScriptAnalyzer -Path build -Recurse -Settings ./PSScriptAnalyzerSettings.psd1 -EnableExit
 pwsh ../standards/tools/Test-RepoConformance.ps1 -LocalPath . -StaticOnly
 ```
 
 ## Rules
 
 - GitHub Flow: topic branch `<type>/<desc>` → PR to `main` → squash merge. No `dev` branch.
-  Conventional Commit titles, `git commit -s` (DCO), signed commits. Agents never merge,
+  Conventional Commit titles, `git commit -S -s` (signature and DCO). Agents never merge,
   tag, release, or change repository settings.
 - Zero warnings; 100% line coverage for `KofTwentyTwo.AppKit` and `KofTwentyTwo.AppKit.Updates`.
 - Testable logic lives in those two packages; WinUI/WPF packages hold views and adapters only.
@@ -35,3 +40,6 @@ pwsh ../standards/tools/Test-RepoConformance.ps1 -LocalPath . -StaticOnly
   solution only after checking it did not write merge-conflict markers into them.
 - Attack-surface changes update `docs/security/threat-model.md`; expensive-to-reverse
   decisions get an ADR in `docs/adr/`.
+- Significant AI contributions include a model-naming `Co-Authored-By` trailer and
+  disclosure in the PR. The maintainer acknowledges the current-commit automated
+  review before merging; follow `docs/security/scorecard.md`.

@@ -71,7 +71,7 @@ flowchart LR
 | T3 | Update flow | Denial of service | A failing or slow update check crashes or blocks the app | Medium | Medium | Every update member is guarded and returns errors as values; the check runs after startup | Mitigated |
 | T4 | Secrets | Information disclosure | A token leaks through logs, settings, or memory | Medium | High | Secrets only in the Credential Manager; never in settings or logs; the pinned plaintext buffer is cleared after writing | Mitigated |
 | T5 | settings.json | Tampering | A crafted settings file sets out-of-range values or crashes parsing | Low | Low | Source-generated JSON parsing inside a catch-all; values sanitized; failure means defaults | Mitigated |
-| T6 | Log files | Tampering / denial of service | A huge or crafted log file hangs the log viewer | Low | Low | The viewer reads only the last 2,000 lines; the entry regex has a match timeout | Mitigated |
+| T6 | Log files | Tampering / denial of service | A huge or crafted log file hangs the log viewer | Low | Low | Each refresh reads at most the last 1 MiB plus a four-byte encoding header, retains at most 2,000 lines, and discloses truncation; the byte limit also bounds a single line and the entry regex has a match timeout | Mitigated |
 | T7 | UI thread | Denial of service | An exception escaping an async handler kills the app | Medium | Medium | Crash net logs and handles dispatcher exceptions; one-dialog-at-a-time guard prevents the stowed-exception crash | Mitigated |
 | T8 | Data folder | Elevation of privilege | `<ID>_DATA_DIR` points the app at another location | Low | Low | The variable is set by the same user; the app gains no rights it did not have | Accepted |
 | T9 | Dependencies | Tampering | A compromised package in AppKit's graph | Low | High | Central versions, lock files with locked restore, dependency review, Trivy and OSV-Scanner in CI, Dependabot with a cooldown | Mitigated |
@@ -81,12 +81,52 @@ flowchart LR
 
 - **T8:** another process running as the same user can redirect or read AppKit's data;
   defending against the user's own processes is outside a desktop library's reach.
-- **Unsigned binaries until code signing is available:** apps built on AppKit ship
-  without an Authenticode signature until the KofTwentyTwo signing identity is validated
-  ([exception EX-0002](https://github.com/KofTwentyTwo/standards/blob/main/exceptions/register.md#ex-0002));
-  provenance attestations and checksums remain verifiable.
+- **Previously unsigned releases:** AppKit 0.1.0 was published under
+  [EX-0002](https://github.com/KofTwentyTwo/standards/blob/main/exceptions/register.md#ex-0002).
+  The owner reports completed Azure publisher validation and an active Public Trust
+  profile. CI authentication, profile-scoped permission and signed-byte evidence
+  remain outstanding. The release caller now blocks new publication until the shared
+  signing builder and verified configuration are enabled. See
+  [release signing](../release-signing.md); retain the exception until actual signing
+  and final-artifact verification succeed. Existing provenance remains verifiable.
+
+Signing trust is restricted to `repo:KofTwentyTwo/AppKit:environment:release`, whose
+deployment policy permits `v*` tags. Signing grants use the certificate profile scope;
+the administrative account is never a CI identity. Only explicitly catalogued owned
+DLLs are signed before packing. Verification checks trust, publisher, timestamps and
+SHA256 digests, then checks the exact DLL bytes inside NuGet assets before checksums
+and provenance. The prepared app builder additionally preserves dependency bytes and
+verifies Velopack helpers and the installer's embedded full-package payload. These
+controls are prepared locally; Azure and live CI proof are still required.
+
+Owned and preserved `.exe`/`.dll` headers are parsed before creating signing
+catalogs. An already corrupt source could otherwise retain its hash through every
+archive comparison. Regression tests reject malformed owned/dependency inputs,
+retain distinct culture-specific payloads and leave excluded/non-PE package
+formats to their applicable checks. This gate does not establish corruption's
+cause or replace final signature and payload verification.
 
 ## 8. Review log
+
+Generated-input regression coverage for T5 and T6 lives in
+`tests/KofTwentyTwo.AppKit.Tests/InputProperties.cs`. Four FsCheck properties each
+run 500 cases in the normal unit suite, checking repair invariants, arbitrary JSON
+and UTF-8 bytes, persistence, and bounded log tails. These bounded tests do not
+replace native dependency testing. `LoggingTests.cs` additionally verifies a 128 MiB
+file, a 4 MiB single line, smaller explicit byte budgets, empty input, and BOM-marked
+UTF-8/UTF-16/UTF-32 tails in both byte orders. Refreshes seek directly to a bounded
+window; they do not scan older content. A partial first visible line is identified
+by the viewer's truncation notice.
+
+`StructuredLoggingTests.cs` checks original templates, typed fields, JSON escaping,
+full exception details, and concurrent asynchronous scope isolation. Structured
+events use the standard .NET logging abstraction with an explicit scalar/JSON value
+policy; the adapter does not reflect over arbitrary objects. Logging templates,
+fields and scopes remain subject to the prohibition on secrets and personal data.
+
+Repository change controls and their single-maintainer limitation are assessed in
+[scorecard.md](scorecard.md). The automated review-record check validates an
+acknowledged review of the current PR commit; it does not replace human review.
 
 | Date | Version | Reviewer | Changes |
 | --- | --- | --- | --- |

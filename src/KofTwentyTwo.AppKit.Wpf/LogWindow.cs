@@ -6,6 +6,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
@@ -27,6 +28,7 @@ public sealed class LogWindow : Window
    private readonly IActivityLog _log;
    private readonly DispatcherTimer _refresh = new() { Interval = TimeSpan.FromSeconds(1) };
    private readonly TextBlock _pathText = new() { VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, Opacity = 0.7, Margin = new Thickness(8, 0, 0, 0) };
+   private readonly TextBlock _limitNotice = new() { Text = "Older log content omitted", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), Visibility = Visibility.Collapsed };
    private readonly TextBox _logText = new() { FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 12, IsReadOnly = true, BorderThickness = new Thickness(0), HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(12) };
    private readonly ToggleButton _follow = new() { Content = "Follow", IsChecked = true, Padding = new Thickness(10, 4, 10, 4) };
    private readonly ToggleButton _errorsOnly = new() { Content = "Errors only", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(8, 0, 0, 0) };
@@ -42,6 +44,9 @@ public sealed class LogWindow : Window
       ArgumentNullException.ThrowIfNull(app);
       _log = log;
       Title = app.DisplayName + " — Activity log";
+      AutomationProperties.SetAutomationId(_logText, "LogText");
+      AutomationProperties.SetAutomationId(_limitNotice, "LogTruncationNotice");
+      _logText.Loaded += (_, _) => _logText.ScrollToEnd();
       Width = 1000;
       Height = 680;
       this.SetAppIcon(app);
@@ -66,6 +71,8 @@ public sealed class LogWindow : Window
       buttons.Children.Add(openFolder);
       DockPanel.SetDock(buttons, Dock.Left);
       toolbar.Children.Add(buttons);
+      DockPanel.SetDock(_limitNotice, Dock.Right);
+      toolbar.Children.Add(_limitNotice);
       toolbar.Children.Add(_pathText);
 
       var root = new DockPanel();
@@ -134,8 +141,10 @@ public sealed class LogWindow : Window
       _pathText.Text = _log.CurrentLogFilePath;
       LogSnapshot snapshot = LogTail.Read(_log.CurrentLogFilePath);
       _lastLength = snapshot.Length;
+      _limitNotice.Visibility = snapshot.IsTruncated ? Visibility.Visible : Visibility.Collapsed;
       bool errorsOnly = _errorsOnly.IsChecked == true;
-      _logText.Text = LogTail.ToDisplayText(errorsOnly ? LogTail.ErrorsOnly(snapshot.Lines) : snapshot.Lines, errorsOnly);
+      _logText.Text = LogTail.ToDisplayText(errorsOnly ? LogTail.ErrorsOnly(snapshot.Lines) : snapshot.Lines, errorsOnly, snapshot.IsTruncated);
+      _logText.UpdateLayout();
       _logText.ScrollToEnd();
    }
 }

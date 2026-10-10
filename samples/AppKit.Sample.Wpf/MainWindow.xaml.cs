@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using KofTwentyTwo.AppKit.Updates;
 using KofTwentyTwo.AppKit.Wpf;
+using Microsoft.Extensions.Logging;
 
 
 namespace AppKit.Sample.Wpf;
@@ -94,7 +95,7 @@ public partial class MainWindow : Window
    /// <summary>Writes an INFO entry, to show logging.</summary>
    private void LogInfo_Click(object sender, RoutedEventArgs e)
    {
-      Program.Log.Info("The user pressed 'Write a log entry'.");
+      LogUserAction(Program.Logger);
       StatusText.Text = "Wrote an INFO entry.";
    }
 
@@ -109,10 +110,22 @@ public partial class MainWindow : Window
       }
       catch(InvalidOperationException ex)
       {
-         Program.Log.Error("Sample operation failed.", ex);
+         LogSampleFailure(Program.Logger, ex);
          StatusText.Text = "Wrote an ERROR entry with its stack trace.";
       }
    }
+
+
+
+   /// <summary>Records the sample button interaction.</summary>
+   [LoggerMessage(101, LogLevel.Information, "The user pressed 'Write a log entry'.")]
+   private static partial void LogUserAction(ILogger logger);
+
+
+
+   /// <summary>Records a handled sample failure with its full exception.</summary>
+   [LoggerMessage(102, LogLevel.Error, "Sample operation failed.")]
+   private static partial void LogSampleFailure(ILogger logger, Exception exception);
 
 
 

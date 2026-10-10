@@ -26,6 +26,19 @@ dotnet build AppKit.slnx -p:Platform=x64 -warnaserror
 dotnet test tests/KofTwentyTwo.AppKit.Tests --settings coverage.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
 ./build/Assert-Coverage.ps1 -ResultsDirectory TestResults -Packages KofTwentyTwo.AppKit,KofTwentyTwo.AppKit.Updates
 
+# Before a minor library release: mutation-test both complete library projects.
+./build/Invoke-MutationTests.ps1
+
+# Generated input tests (also included in the unit suite); Node 24 for repository tools
+dotnet test tests/KofTwentyTwo.AppKit.Tests --filter FullyQualifiedName~InputProperties
+npm ci --ignore-scripts
+npm run lint
+npm test
+Import-Module PSScriptAnalyzer -RequiredVersion 1.25.0
+Invoke-ScriptAnalyzer -Path build -Recurse -Settings ./PSScriptAnalyzerSettings.psd1 -EnableExit
+Import-Module Pester -RequiredVersion 5.7.1
+Invoke-Pester -Path build/Assert-Coverage.Tests.ps1 -CI
+
 # End-to-end UI tests: FlaUI launches both sample apps (needs an interactive desktop)
 dotnet test tests/KofTwentyTwo.AppKit.UiTests
 
@@ -39,6 +52,15 @@ lines between members and a header comment on every type and method (Rider and
 ReSharper apply the blank lines from `.editorconfig`). Changing a package version means
 updating `Directory.Packages.props` and committing the regenerated `packages.lock.json`
 files (`dotnet restore AppKit.slnx -p:Platform=x64 --force-evaluate`).
+
+Mutation testing uses repository-local Stryker.NET 5.0.0 and writes HTML/JSON reports
+under `artifacts/mutation/`. Review every surviving or uncovered core mutation:
+add a meaningful test or record why the mutation is equivalent or deliberately
+accepted. Keep the report and decisions in the release checklist. The tool's default
+score thresholds are advisory; successful execution alone does not approve survivors.
+To repeat one library, use `./build/Invoke-MutationTests.ps1 -Projects KofTwentyTwo.AppKit`.
+See [the mutation audit](docs/testing/mutation-testing.md) for current results and
+explicit survivor decisions, including native cleanup limits.
 
 Install the git hooks once per clone. They run the same secret, workflow, and
 commit-message checks CI does:
@@ -60,6 +82,9 @@ pre-commit install --hook-type pre-commit --hook-type commit-msg
    message on `main`.
 4. Every required check must pass, and every review thread must be resolved, before
    the pull request merges.
+5. With one maintainer, record an automated review of the **current head commit** and
+   acknowledge its findings before merging. Follow the [review record instructions](docs/security/scorecard.md#recording-an-automated-review).
+   CodeQL is also required. A new commit invalidates the previous review record.
 
 ## What makes a contribution acceptable
 
@@ -89,6 +114,15 @@ pre-commit install --hook-type pre-commit --hook-type commit-msg
 | `ci / build-test` | Locked restore, zero-warning build, unit tests, 100% coverage gate, packages pack |
 | `ci / format` | `dotnet format --verify-no-changes --severity warn` |
 | `ci / ui-tests` | FlaUI end-to-end tests of both sample apps |
+| `review / tests` | Review gate rejects stale, incomplete, and unauthorized records |
+| `scripts / javascript`, `scripts / powershell` | Shared lint rules, review tests, and tooling dependency signatures |
+| `review / automated` | Current commit has a maintainer-acknowledged automated review (enable after bootstrap) |
+
+The four FsCheck properties in `InputProperties.cs` each generate 500 cases during
+the normal unit run. They exercise settings repair, malformed bytes, JSON round trips,
+and bounded log tails. A failure reports a shrunk counterexample and replay seed;
+reproduce it with the failing property's `Replay` option, then retain a fixed regression
+test. FsCheck is a test-only dependency; it is not shipped in AppKit packages.
 
 ## Sign-off (Developer Certificate of Origin)
 
@@ -109,6 +143,8 @@ branch, run `git rebase --signoff main` and force-push the branch.
 AI coding tools are welcome. You remain the author: you must understand, test, and be
 able to explain every line you submit, and you sign it off as your own. Note
 substantial AI assistance in the pull request description.
+Include a `Co-Authored-By:` trailer naming the model for significant AI contributions
+(K22-AGENT-40 / K22-AI-02).
 
 ## License
 

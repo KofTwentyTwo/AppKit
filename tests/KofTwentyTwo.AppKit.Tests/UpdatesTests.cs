@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+using System.Text.Json;
 using KofTwentyTwo.AppKit.Updates;
 
 
@@ -27,6 +28,35 @@ public class UpdateCheckResultTests
 /// <summary>Tests for the update service&apos;s guarding and state, over a fake Velopack backend.</summary>
 public class VelopackUpdateServiceTests
 {
+   /// <summary>Repeated property reads and checks share the same lazy backend rather than recreating an update manager.</summary>
+   [Fact]
+   public async Task Backend_RepeatedAccess_CreatesOnce()
+   {
+      int creations = 0;
+      var service = new VelopackUpdateService(() =>
+      {
+         creations++;
+         return new FakeBackend();
+      });
+      Assert.True(service.IsSupported);
+      Assert.Equal("1.0.0", service.CurrentVersion);
+      await service.CheckAsync();
+      await service.CheckAsync();
+      Assert.Equal(1, creations);
+   }
+
+
+
+   /// <summary>Reading an unavailable installed version fails closed without throwing into an app's UI.</summary>
+   [Fact]
+   public void CurrentVersion_BackendThrows_ReturnsNull()
+   {
+      var service = new VelopackUpdateService(() => new FakeBackend { VersionFailure = new IOException("missing manifest") });
+      Assert.Null(service.CurrentVersion);
+   }
+
+
+
    /// <summary>NotInstalled: is unsupported.</summary>
    [Fact]
    public async Task NotInstalled_IsUnsupported()
@@ -179,7 +209,7 @@ public class UpdateCoordinatorTests
       var prompter = new RecordingPrompter();
       await Coordinator(prompter).CheckInteractivelyAsync();
       Assert.Equal("Could not check for updates.\noffline", prompter.Messages.Single().Message);
-      Assert.Equal("WARN Update check failed: offline", _log.Entries.Single());
+      AssertLogEntry(_log.Entries.Single(), "WARN", "Update check failed: offline", "Update check failed: {Error}", ("Error", "offline"));
    }
 
 
@@ -194,6 +224,8 @@ public class UpdateCoordinatorTests
       var prompter = new RecordingPrompter();
       await Coordinator(prompter).CheckInteractivelyAsync();
       Assert.Equal(expected, prompter.Messages.Single().Message);
+      Assert.Empty(prompter.Confirmations);
+      Assert.Equal(0, _updates.ApplyCalls);
    }
 
 
@@ -224,7 +256,7 @@ public class UpdateCoordinatorTests
       await Coordinator(prompter).CheckInteractivelyAsync();
       Assert.Equal(1, _updates.ApplyCalls);
       Assert.Empty(prompter.Messages);
-      Assert.Equal("INFO Installing update v2.0.0.", _log.Entries.Single());
+      AssertLogEntry(_log.Entries.Single(), "INFO", "Installing update v2.0.0.", "Installing update v{Version}.", ("Version", "2.0.0"));
    }
 
 
@@ -238,7 +270,7 @@ public class UpdateCoordinatorTests
       var prompter = new RecordingPrompter(confirm: true);
       await Coordinator(prompter).CheckInteractivelyAsync();
       Assert.Equal((UpdateText.FailedTitle, "disk full"), prompter.Messages.Single());
-      Assert.Equal("ERROR Update to v2.0.0 failed: disk full", _log.Entries.Last());
+      AssertLogEntry(_log.Entries.Last(), "ERROR", "Update to v2.0.0 failed: disk full", "Update to v{Version} failed: {Error}", ("Version", "2.0.0"), ("Error", "disk full"));
    }
 
 
@@ -250,6 +282,7 @@ public class UpdateCoordinatorTests
       var prompter = new RecordingPrompter();
       _updates.IsSupported = false;
       await Coordinator(prompter).CheckQuietlyAsync();
+      Assert.Equal(0, _updates.CheckCalls);
 
       _updates.IsSupported = true;
       await Coordinator(prompter).CheckQuietlyAsync();
@@ -259,7 +292,7 @@ public class UpdateCoordinatorTests
 
       Assert.Empty(prompter.Messages);
       Assert.Empty(prompter.Confirmations);
-      Assert.Equal("WARN Startup update check failed: offline", _log.Entries.Single());
+      AssertLogEntry(_log.Entries.Single(), "WARN", "Startup update check failed: offline", "Startup update check failed: {Error}", ("Error", "offline"));
    }
 
 
@@ -273,7 +306,31 @@ public class UpdateCoordinatorTests
       await Coordinator(prompter).CheckQuietlyAsync();
       Assert.Single(prompter.Confirmations);
       Assert.Equal(1, _updates.ApplyCalls);
-      Assert.Equal("INFO Update available: v2.0.0.", _log.Entries[0]);
+      AssertLogEntry(_log.Entries[0], "INFO", "Update available: v2.0.0.", "Update available: v{Version}.", ("Version", "2.0.0"));
+   }
+
+
+
+   /// <summary>An error wins over a conflicting available version and never prompts an installation.</summary>
+   [Theory]
+   [InlineData(false)]
+   [InlineData(true)]
+   public async Task Check_FailedResultWithVersion_DoesNotOfferInstall(bool quietly)
+   {
+      _updates.NextCheck = new UpdateCheckResult("2.0.0", "offline");
+      var prompter = new RecordingPrompter(confirm: true);
+      if(quietly)
+      {
+         await Coordinator(prompter).CheckQuietlyAsync();
+         Assert.Empty(prompter.Messages);
+      }
+      else
+      {
+         await Coordinator(prompter).CheckInteractivelyAsync();
+         Assert.Contains("offline", prompter.Messages.Single().Message, StringComparison.Ordinal);
+      }
+      Assert.Empty(prompter.Confirmations);
+      Assert.Equal(0, _updates.ApplyCalls);
    }
 
 
@@ -296,5 +353,21 @@ public class UpdateCoordinatorTests
       Assert.Throws<ArgumentNullException>(() => new UpdateCoordinator(null!, prompter, "x"));
       Assert.Throws<ArgumentNullException>(() => new UpdateCoordinator(_updates, null!, "x"));
       Assert.Throws<ArgumentException>(() => new UpdateCoordinator(_updates, prompter, " "));
+   }
+
+
+
+   /// <summary>Checks rendered compatibility and separate named fields at the existing sink boundary.</summary>
+   private static void AssertLogEntry(string entry, string level, string message, string template, params (string Name, string Value)[] properties)
+   {
+      Assert.StartsWith(level + " ", entry, StringComparison.Ordinal);
+      using var document = JsonDocument.Parse(entry[(level.Length + 1)..]);
+      JsonElement record = document.RootElement;
+      Assert.Equal(message, record.GetProperty("Message").GetString());
+      Assert.Equal(template, record.GetProperty("MessageTemplate").GetString());
+      foreach((string name, string value) in properties)
+      {
+         Assert.Equal(value, record.GetProperty("Properties").GetProperty(name).GetString());
+      }
    }
 }

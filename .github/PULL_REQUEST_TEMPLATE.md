@@ -21,3 +21,8 @@
 - [ ] No secrets, credentials, or personal data
 - [ ] New dependencies are justified below, or none were added
 - [ ] Substantial AI assistance, if any, is noted here
+- [ ] Automated review recorded for the current head commit; maintainer read it and resolved or answered every finding
+
+<!-- Post the review as a separate PR comment using docs/security/scorecard.md.
+     Re-review and replace the record after any new commit. This checklist alone
+     does not satisfy the review / automated check. -->

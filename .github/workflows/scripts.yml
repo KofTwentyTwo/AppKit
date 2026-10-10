@@ -1,0 +1,71 @@
+# K22-CODE-TS / K22-CODE-SH: repository tooling is checked before merges and releases.
+name: scripts
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  javascript:
+    name: javascript
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+      - name: Install locked development tools without lifecycle scripts
+        run: npm ci --ignore-scripts
+      - name: Lint JavaScript
+        run: npm run lint
+      - name: Test review validation
+        run: npm test
+      - name: Verify dependency signatures
+        run: npm audit signatures
+
+  powershell:
+    name: powershell
+    runs-on: windows-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned analyzer and check scripts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Install-Module PSScriptAnalyzer -RequiredVersion 1.25.0 -Scope CurrentUser -Force
+          Import-Module PSScriptAnalyzer -RequiredVersion 1.25.0
+          # Analyze each file separately: recursive analysis can crash inside 1.25.0.
+          foreach($script in Get-ChildItem -LiteralPath build -Recurse -File | Where-Object Extension -In '.ps1', '.psm1', '.psd1')
+          {
+             $findings = @(Invoke-ScriptAnalyzer -Path $script.FullName -Settings ./PSScriptAnalyzerSettings.psd1)
+             if($findings.Count -gt 0) { $findings | Format-Table; throw "Script analysis failed: $($script.Name)" }
+          }
+      - name: Verify coverage and signing gate rejection paths
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Install-Module Pester -RequiredVersion 5.7.1 -Scope CurrentUser -Force
+          Import-Module Pester -RequiredVersion 5.7.1
+          $testConfiguration = New-PesterConfiguration
+          $testConfiguration.Run.Path = @('build/Assert-Coverage.Tests.ps1', 'build/WindowsSigning.Tests.ps1', 'build/ArtifactSigning.Tests.ps1')
+          $testConfiguration.Run.Exit = $true
+          $testConfiguration.TestResult.Enabled = $true
+          $testConfiguration.TestResult.OutputPath = 'TestResults/coverage-gate.xml'
+          Invoke-Pester -Configuration $testConfiguration
