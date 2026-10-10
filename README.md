@@ -75,7 +75,8 @@ internal static class MyApp
 }
 
 // Program.Main (with DISABLE_XAML_GENERATED_MAIN): Velopack goes first.
-VelopackStartup.Run();
+// Keep this direct call so vpk can verify startup in the entry assembly.
+Velopack.VelopackApp.Build().Run();
 
 // App constructor
 WinUIShell.InstallCrashNet(this, () => Log);

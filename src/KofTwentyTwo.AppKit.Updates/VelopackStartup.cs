@@ -14,6 +14,11 @@ namespace KofTwentyTwo.AppKit.Updates;
 /// the app's exe with special arguments; this handles them and may exit the process.
 /// Outside those moments (F5, loose builds, MSIX) it does nothing.
 /// </summary>
+/// <remarks>
+/// Retained for existing callers. For applications packaged by vpk, call
+/// <c>VelopackApp.Build().Run()</c> directly in the entry assembly: vpk's static
+/// startup verification cannot recognize this indirect wrapper.
+/// </remarks>
 public static class VelopackStartup
 {
    /// <summary>

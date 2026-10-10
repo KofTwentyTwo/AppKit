@@ -5,9 +5,9 @@
 
 using System.Windows;
 using KofTwentyTwo.AppKit.Logging;
-using KofTwentyTwo.AppKit.Updates;
 using KofTwentyTwo.AppKit.Wpf;
 using Microsoft.Extensions.Logging;
+using Velopack;
 
 
 namespace AppKit.Sample.Wpf;
@@ -27,7 +27,8 @@ public static partial class Program
    [STAThread]
    private static void Main()
    {
-      VelopackStartup.Run();
+      // vpk checks the entry assembly for this direct call before packaging.
+      VelopackApp.Build().Run();
 
       var app = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
       WpfShell.InstallCrashNet(app, () => Log);
