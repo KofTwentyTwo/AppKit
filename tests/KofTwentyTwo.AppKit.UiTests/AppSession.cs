@@ -148,12 +148,14 @@ public sealed class AppSession : IDisposable
 
    /// <summary>
    /// Opens the top-level menu named <paramref name="menuName"/> and invokes the item
-   /// <paramref name="itemAutomationId"/>. A freshly started app can swallow the first
+   /// <paramref name="itemAutomationId"/>. Foregrounds this app so mouse fallback cannot
+   /// land in another sample's window. A freshly started app can swallow the first
    /// expand (its flyout opens before the menu is ready), so the menu is re-opened
    /// until the item appears.
    /// </summary>
    public void InvokeMenuItem(string menuName, string itemAutomationId)
    {
+      MainWindow.SetForeground();
       AutomationElement menu = WaitFor(
           () => MainWindow.FindFirstDescendant(cf => cf.ByControlType(ControlType.MenuItem).And(cf.ByName(menuName))),
           $"menu '{menuName}'");
