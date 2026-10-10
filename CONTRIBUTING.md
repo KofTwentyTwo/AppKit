@@ -26,6 +26,9 @@ dotnet build AppKit.slnx -p:Platform=x64 -warnaserror
 dotnet test tests/KofTwentyTwo.AppKit.Tests --settings coverage.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
 ./build/Assert-Coverage.ps1 -ResultsDirectory TestResults -Packages KofTwentyTwo.AppKit,KofTwentyTwo.AppKit.Updates
 
+# Before a minor library release: mutation-test both complete library projects.
+./build/Invoke-MutationTests.ps1
+
 # Generated input tests (also included in the unit suite); Node 24 for repository tools
 dotnet test tests/KofTwentyTwo.AppKit.Tests --filter FullyQualifiedName~InputProperties
 npm ci --ignore-scripts
@@ -49,6 +52,15 @@ lines between members and a header comment on every type and method (Rider and
 ReSharper apply the blank lines from `.editorconfig`). Changing a package version means
 updating `Directory.Packages.props` and committing the regenerated `packages.lock.json`
 files (`dotnet restore AppKit.slnx -p:Platform=x64 --force-evaluate`).
+
+Mutation testing uses repository-local Stryker.NET 5.0.0 and writes HTML/JSON reports
+under `artifacts/mutation/`. Review every surviving or uncovered core mutation:
+add a meaningful test or record why the mutation is equivalent or deliberately
+accepted. Keep the report and decisions in the release checklist. The tool's default
+score thresholds are advisory; successful execution alone does not approve survivors.
+To repeat one library, use `./build/Invoke-MutationTests.ps1 -Projects KofTwentyTwo.AppKit`.
+See [the mutation audit](docs/testing/mutation-testing.md) for current results and
+explicit survivor decisions, including native cleanup limits.
 
 Install the git hooks once per clone. They run the same secret, workflow, and
 commit-message checks CI does:

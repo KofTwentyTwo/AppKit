@@ -28,6 +28,35 @@ public class UpdateCheckResultTests
 /// <summary>Tests for the update service&apos;s guarding and state, over a fake Velopack backend.</summary>
 public class VelopackUpdateServiceTests
 {
+   /// <summary>Repeated property reads and checks share the same lazy backend rather than recreating an update manager.</summary>
+   [Fact]
+   public async Task Backend_RepeatedAccess_CreatesOnce()
+   {
+      int creations = 0;
+      var service = new VelopackUpdateService(() =>
+      {
+         creations++;
+         return new FakeBackend();
+      });
+      Assert.True(service.IsSupported);
+      Assert.Equal("1.0.0", service.CurrentVersion);
+      await service.CheckAsync();
+      await service.CheckAsync();
+      Assert.Equal(1, creations);
+   }
+
+
+
+   /// <summary>Reading an unavailable installed version fails closed without throwing into an app's UI.</summary>
+   [Fact]
+   public void CurrentVersion_BackendThrows_ReturnsNull()
+   {
+      var service = new VelopackUpdateService(() => new FakeBackend { VersionFailure = new IOException("missing manifest") });
+      Assert.Null(service.CurrentVersion);
+   }
+
+
+
    /// <summary>NotInstalled: is unsupported.</summary>
    [Fact]
    public async Task NotInstalled_IsUnsupported()
@@ -195,6 +224,8 @@ public class UpdateCoordinatorTests
       var prompter = new RecordingPrompter();
       await Coordinator(prompter).CheckInteractivelyAsync();
       Assert.Equal(expected, prompter.Messages.Single().Message);
+      Assert.Empty(prompter.Confirmations);
+      Assert.Equal(0, _updates.ApplyCalls);
    }
 
 
@@ -251,6 +282,7 @@ public class UpdateCoordinatorTests
       var prompter = new RecordingPrompter();
       _updates.IsSupported = false;
       await Coordinator(prompter).CheckQuietlyAsync();
+      Assert.Equal(0, _updates.CheckCalls);
 
       _updates.IsSupported = true;
       await Coordinator(prompter).CheckQuietlyAsync();
@@ -275,6 +307,30 @@ public class UpdateCoordinatorTests
       Assert.Single(prompter.Confirmations);
       Assert.Equal(1, _updates.ApplyCalls);
       AssertLogEntry(_log.Entries[0], "INFO", "Update available: v2.0.0.", "Update available: v{Version}.", ("Version", "2.0.0"));
+   }
+
+
+
+   /// <summary>An error wins over a conflicting available version and never prompts an installation.</summary>
+   [Theory]
+   [InlineData(false)]
+   [InlineData(true)]
+   public async Task Check_FailedResultWithVersion_DoesNotOfferInstall(bool quietly)
+   {
+      _updates.NextCheck = new UpdateCheckResult("2.0.0", "offline");
+      var prompter = new RecordingPrompter(confirm: true);
+      if(quietly)
+      {
+         await Coordinator(prompter).CheckQuietlyAsync();
+         Assert.Empty(prompter.Messages);
+      }
+      else
+      {
+         await Coordinator(prompter).CheckInteractivelyAsync();
+         Assert.Contains("offline", prompter.Messages.Single().Message, StringComparison.Ordinal);
+      }
+      Assert.Empty(prompter.Confirmations);
+      Assert.Equal(0, _updates.ApplyCalls);
    }
 
 

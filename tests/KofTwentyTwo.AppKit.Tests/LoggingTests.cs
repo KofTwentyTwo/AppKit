@@ -130,6 +130,20 @@ public sealed class FileActivityLogTests : IDisposable
 
 
 
+   /// <summary>A log directory removed between writes is recreated rather than silently dropping diagnostics.</summary>
+   [Fact]
+   public void Info_RemovedDirectory_RecreatesAndWrites()
+   {
+      string directory = _temp.File("logs");
+      var log = new FileActivityLog(directory, "app", time: _clock);
+      log.Info("first");
+      Directory.Delete(directory, recursive: true);
+      log.Info("recovered");
+      Assert.Contains("recovered", File.ReadAllText(log.CurrentLogFilePath), StringComparison.Ordinal);
+   }
+
+
+
    /// <summary>ForApp: uses the apps logs folder and id.</summary>
    [Fact]
    public void ForApp_UsesTheAppsLogsFolderAndId()
@@ -208,6 +222,19 @@ public sealed class LogTailTests : IDisposable
       Assert.Equal(["3", "4"], snapshot.Lines);
       Assert.Equal(new FileInfo(path).Length, snapshot.Length);
       Assert.False(snapshot.IsTruncated);
+   }
+
+
+
+   /// <summary>The viewer can read a log while its writer keeps a shared write handle open.</summary>
+   [Fact]
+   public void Read_WithOpenWriter_ReturnsCurrentTail()
+   {
+      string path = _temp.File("active.log");
+      using var writer = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+      writer.Write(Encoding.UTF8.GetBytes("first\nlatest\n"));
+      writer.Flush();
+      Assert.Equal(["first", "latest"], LogTail.Read(path).Lines);
    }
 
 

@@ -37,6 +37,7 @@ public class AppInfoTests
    {
       ArgumentException ex = Assert.Throws<ArgumentException>(() => new AppInfo { Id = id!, DisplayName = "X" });
       Assert.Equal("value", ex.ParamName);
+      Assert.Contains("lowercase letters", ex.Message, StringComparison.Ordinal);
    }
 
 
@@ -150,7 +151,9 @@ public class ArgbColorTests
    [Fact]
    public void Parse_Malformed_Throws()
    {
-      Assert.Throws<FormatException>(() => ArgbColor.Parse("red"));
+      FormatException error = Assert.Throws<FormatException>(() => ArgbColor.Parse("red"));
+      Assert.Contains("red", error.Message, StringComparison.Ordinal);
+      Assert.Contains("#RRGGBB", error.Message, StringComparison.Ordinal);
    }
 }
 
@@ -235,6 +238,8 @@ public class BuildVersionTests
    [InlineData("1.2.3+0123456789abcdef", "1.2.3 (012345678)")]
    [InlineData("1.2.3+abc.more", "1.2.3 (abc)")]
    [InlineData("1.2.3+", "1.2.3")]
+   [InlineData("+abc", " (abc)")]
+   [InlineData("1.2.3+.more", "1.2.3")]
    public void Format_ShortensCommitMetadata(string? input, string expected)
    {
       Assert.Equal(expected, BuildVersion.Format(input));
@@ -247,6 +252,7 @@ public class BuildVersionTests
    [InlineData(null, false)]
    [InlineData("1.2.3", false)]
    [InlineData("1.2.3+sha-with-dash", false)]
+   [InlineData("+sha-with-dash", false)]
    [InlineData("1.2.3-dev", true)]
    [InlineData("1.2.3-beta.1+abc", true)]
    public void IsPrerelease_LooksOnlyAtTheVersionPart(string? input, bool expected)
@@ -293,8 +299,8 @@ public class BuildVersionTests
    [Fact]
    public void NullAssembly_Throws()
    {
-      Assert.Throws<ArgumentNullException>(() => BuildVersion.Describe(null!));
-      Assert.Throws<ArgumentNullException>(() => BuildVersion.IsPrerelease((Assembly)null!));
+      Assert.Equal("assembly", Assert.Throws<ArgumentNullException>(() => BuildVersion.Describe(null!)).ParamName);
+      Assert.Equal("assembly", Assert.Throws<ArgumentNullException>(() => BuildVersion.IsPrerelease((Assembly)null!)).ParamName);
    }
 
 

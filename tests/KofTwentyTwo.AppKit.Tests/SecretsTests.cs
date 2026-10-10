@@ -36,6 +36,7 @@ public class InMemorySecretVaultTests
       Assert.Throws<ArgumentException>(() => vault.Store("", "v"));
       Assert.Throws<ArgumentNullException>(() => vault.Store("k", null!));
       Assert.Throws<ArgumentNullException>(() => vault.TryRetrieve(null!));
+      Assert.Throws<ArgumentException>(() => vault.TryRetrieve(""));
       Assert.Throws<ArgumentException>(() => vault.Delete(""));
    }
 }
@@ -101,7 +102,7 @@ public sealed class CredentialManagerVaultTests : IDisposable
       // The Credential Manager caps blobs at 2560 bytes; silently losing a secret is worse than throwing.
       Win32Exception ex = Assert.Throws<Win32Exception>(() => _vault.Store("token", new string('x', 5000)));
       Assert.Contains("CredWriteW", ex.Message, StringComparison.Ordinal);
-      Assert.Throws<ArgumentNullException>(() => _vault.Store("token", null!));
+      Assert.Equal("secret", Assert.Throws<ArgumentNullException>(() => _vault.Store("token", null!)).ParamName);
    }
 
 
@@ -110,8 +111,12 @@ public sealed class CredentialManagerVaultTests : IDisposable
    [Fact]
    public void InvalidTargets_SurfaceNativeErrors()
    {
-      Assert.Throws<Win32Exception>(() => CredentialManagerVault.TryRetrieveTarget("", "k"));
-      Assert.Throws<Win32Exception>(() => CredentialManagerVault.DeleteTarget("", "k"));
+      Win32Exception read = Assert.Throws<Win32Exception>(() => CredentialManagerVault.TryRetrieveTarget("", "k"));
+      Assert.Contains("CredReadW", read.Message, StringComparison.Ordinal);
+      Assert.Contains("'k'", read.Message, StringComparison.Ordinal);
+      Win32Exception delete = Assert.Throws<Win32Exception>(() => CredentialManagerVault.DeleteTarget("", "k"));
+      Assert.Contains("CredDeleteW", delete.Message, StringComparison.Ordinal);
+      Assert.Contains("'k'", delete.Message, StringComparison.Ordinal);
    }
 
 
@@ -120,7 +125,8 @@ public sealed class CredentialManagerVaultTests : IDisposable
    [Fact]
    public void Constructor_ValidatesPlatformAndPrefix()
    {
-      Assert.Throws<PlatformNotSupportedException>(() => new CredentialManagerVault("x", isWindows: false));
+      PlatformNotSupportedException error = Assert.Throws<PlatformNotSupportedException>(() => new CredentialManagerVault("x", isWindows: false));
+      Assert.Contains("Windows Credential Manager", error.Message, StringComparison.Ordinal);
       Assert.Throws<ArgumentException>(() => new CredentialManagerVault(" "));
    }
 }

@@ -132,10 +132,16 @@ internal sealed class FakeUpdateService : IUpdateService
 
    public int ApplyCalls { get; private set; }
 
+   public int CheckCalls { get; private set; }
+
 
 
    /// <summary>Returns the scripted check result.</summary>
-   public Task<UpdateCheckResult> CheckAsync(CancellationToken cancellationToken = default) => Task.FromResult(NextCheck);
+   public Task<UpdateCheckResult> CheckAsync(CancellationToken cancellationToken = default)
+   {
+      CheckCalls++;
+      return Task.FromResult(NextCheck);
+   }
 
 
 
@@ -152,9 +158,17 @@ internal sealed class FakeUpdateService : IUpdateService
 /// <summary>A scriptable Velopack stand-in.</summary>
 internal sealed class FakeBackend : IUpdateBackend
 {
+   private string? _currentVersion = "1.0.0";
+
    public bool IsInstalled { get; set; } = true;
 
-   public string? CurrentVersion { get; set; } = "1.0.0";
+   public string? CurrentVersion
+   {
+      get => VersionFailure is null ? _currentVersion : throw VersionFailure;
+      set => _currentVersion = value;
+   }
+
+   public Exception? VersionFailure { get; set; }
 
    public string? Available { get; set; }
 

@@ -200,8 +200,28 @@ public sealed class StructuredLoggingTests : IDisposable
       var sink = new RecordingLog();
       ILogger logger = sink.AsLogger();
       Assert.False(logger.IsEnabled(level));
-      logger.Log(level, default, "state", null, static (_, _) => throw new InvalidOperationException("must not format"));
+      bool evaluated = false;
+      logger.Log(level, default, "state", null, (_, _) =>
+      {
+         evaluated = true;
+         return "must not format";
+      });
+      Assert.False(evaluated);
       Assert.Empty(sink.Entries);
+   }
+
+
+
+   /// <summary>A warning without an exception remains one JSON event without an extra blank line.</summary>
+   [Fact]
+   public void Log_WarningWithoutException_RemainsSingleLine()
+   {
+      var sink = new RecordingLog();
+      sink.AsLogger().Log(LogLevel.Warning, default, "warning", null, static (state, _) => state);
+      string entry = Assert.Single(sink.Entries);
+      Assert.DoesNotContain('\n', entry);
+      Assert.DoesNotContain('\r', entry);
+      Assert.Equal("warning", ReadRecord(entry).GetProperty("Message").GetString());
    }
 
 

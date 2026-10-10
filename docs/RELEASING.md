@@ -31,7 +31,9 @@ are `<prefix>-dev`. Bump the prefix right after each release, in a pull request.
 
 The caller first verifies that the tagged commit belongs to `main`, then reruns
 build, unit tests, coverage, formatting, UI tests, security scans, CodeQL and script
-checks. All must pass before publication. The shared workflow then builds the
+checks, plus mutation-test runs for both UI-independent libraries. All must pass
+before publication. Mutation HTML/JSON evidence is retained for 30 days by the
+`mutation` workflow, which also supports manual runs. The shared workflow builds the
 release separately (SLSA Build L3: its build definition lives in KofTwentyTwo/standards):
 
 1. Validates strict SemVer and repeats locked restore,
@@ -70,6 +72,13 @@ nuget.org through **trusted publishing** (OIDC; no API key is stored anywhere).
    Update [CHANGELOG.md](../CHANGELOG.md) with user-facing changes, upgrade impact,
    and advisory IDs for any publicly known vulnerability fixed. Include or link those
    notes in the GitHub release; generated PR lists alone may omit important changes.
+   Run `./build/Invoke-MutationTests.ps1` before a minor release, then attach or link
+   both library reports and the disposition of every surviving/uncovered core
+   mutation. New tests or explicit decisions are required by K22-TEST-11; a tool
+   exit code alone does not prove test adequacy. The release caller repeats the runs
+   for the tagged commit. No numeric mutation-score requirement has been adopted.
+   Use [the latest mutation audit](testing/mutation-testing.md) as a starting point;
+   confirm its survivor decisions still match the release code.
 3. Tag `main` and push the tag:
 
    ```powershell

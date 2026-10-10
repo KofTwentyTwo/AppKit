@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using KofTwentyTwo.AppKit.Settings;
 
@@ -89,6 +90,23 @@ public sealed class SettingsStoreTests : IDisposable
       Assert.False(loaded.ShowSplashScreen);
       Assert.Equal(1000, loaded.SplashMilliseconds);
       Assert.False(loaded.CheckForUpdatesOnStartup);
+   }
+
+
+
+   /// <summary>Invalid settings are repaired in memory and on disk before a later load can mask bad writes.</summary>
+   [Fact]
+   public void Save_InvalidSettings_SanitizesBeforeWriting()
+   {
+      SettingsStore<SampleSettings> store = Store();
+      var settings = new SampleSettings { Concurrency = 500, Theme = "Purple", SplashMilliseconds = int.MaxValue };
+      Assert.True(store.Save(settings));
+      Assert.Equal(64, settings.Concurrency);
+      Assert.Equal("System", settings.Theme);
+      Assert.Equal(ShellSettings.MaxSplashMilliseconds, settings.SplashMilliseconds);
+      using var document = JsonDocument.Parse(File.ReadAllText(store.Path));
+      Assert.Equal(64, document.RootElement.GetProperty("Concurrency").GetInt32());
+      Assert.Equal("System", document.RootElement.GetProperty("Theme").GetString());
    }
 
 

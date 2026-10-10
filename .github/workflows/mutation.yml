@@ -1,0 +1,42 @@
+# K22-TEST-11: retain mutation evidence before publishing library releases.
+name: mutation
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  libraries:
+    name: ${{ matrix.project }}
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [KofTwentyTwo.AppKit, KofTwentyTwo.AppKit.Updates]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Run pinned mutation tool
+        shell: pwsh
+        env:
+          MUTATION_PROJECT: ${{ matrix.project }}
+        run: ./build/Invoke-MutationTests.ps1 -Projects $env:MUTATION_PROJECT
+      - name: Retain mutation evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mutation-${{ matrix.project }}
+          path: artifacts/mutation
+          if-no-files-found: error
+          retention-days: 30
