@@ -18,8 +18,8 @@ Describe 'Owned binary catalog' `
       New-Item -ItemType Directory -Path $script:Root | Out-Null
       $script:Catalog = Join-Path $script:Root 'catalog.txt'
       $script:Manifest = Join-Path $script:Root 'manifest.json'
-      Set-Content -LiteralPath (Join-Path $script:Root 'Owned.dll') -Value 'owned'
-      Set-Content -LiteralPath (Join-Path $script:Root 'Microsoft.dll') -Value 'third-party'
+      Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination (Join-Path $script:Root 'Owned.dll')
+      Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination (Join-Path $script:Root 'Microsoft.dll')
    }
 
    It 'includes only explicit owned names and inventories other binaries' `
@@ -50,6 +50,34 @@ Describe 'Owned binary catalog' `
       New-WindowsSigningCatalog -Root $script:Root -Patterns @('Owned.dll') -CatalogPath $script:Catalog -ManifestPath $script:Manifest -WhatIf
       Test-Path -LiteralPath $script:Catalog | Should -BeFalse
       Test-Path -LiteralPath $script:Manifest | Should -BeFalse
+   }
+
+   It 'rejects malformed owned PE input before writing a catalog' `
+   {
+      [IO.File]::WriteAllBytes((Join-Path $script:Root 'Owned.dll'), [byte[]]::new(128))
+      { New-WindowsSigningCatalog -Root $script:Root -Patterns @('Owned.dll') -CatalogPath $script:Catalog -ManifestPath $script:Manifest } | Should -Throw '*Invalid published PE binary: Owned.dll*'
+      Test-Path -LiteralPath $script:Catalog | Should -BeFalse
+   }
+
+   It 'rejects an already malformed preserved dependency' `
+   {
+      [IO.File]::WriteAllBytes((Join-Path $script:Root 'Microsoft.dll'), [byte[]]::new(128))
+      { New-WindowsSigningCatalog -Root $script:Root -Patterns @('Owned.dll') -CatalogPath $script:Catalog -ManifestPath $script:Manifest -PreserveOtherBinaries } | Should -Throw '*Invalid published PE binary: Microsoft.dll*'
+      Test-Path -LiteralPath $script:Manifest | Should -BeFalse
+   }
+
+   It 'does not treat package-format signing targets as PE images' `
+   {
+      Set-Content -LiteralPath (Join-Path $script:Root 'Setup.msi') -Value 'package fixture; signature validation is a later gate'
+      { New-WindowsSigningCatalog -Root $script:Root -Patterns @('Setup.msi') -CatalogPath $script:Catalog -ManifestPath $script:Manifest } | Should -Not -Throw
+      Get-Content -LiteralPath $script:Catalog | Should -Be 'Setup.msi'
+   }
+
+   It 'ignores excluded binaries when dependency preservation is disabled' `
+   {
+      [IO.File]::WriteAllBytes((Join-Path $script:Root 'Microsoft.dll'), [byte[]]::new(128))
+      { New-WindowsSigningCatalog -Root $script:Root -Patterns @('Owned.dll') -CatalogPath $script:Catalog -ManifestPath $script:Manifest } | Should -Not -Throw
+      @(Get-Content -LiteralPath $script:Manifest -Raw | ConvertFrom-Json) | Should -HaveCount 1
    }
 }
 
@@ -126,8 +154,8 @@ Describe 'Signature and distributed-byte gates' `
       {
          $root = Join-Path $TestDrive 'preserve'
          New-Item -ItemType Directory -Path $root | Out-Null
-         Set-Content -LiteralPath (Join-Path $root 'Owned.dll') -Value 'owned'
-         Set-Content -LiteralPath (Join-Path $root 'Microsoft.dll') -Value 'third-party'
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination (Join-Path $root 'Owned.dll')
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination (Join-Path $root 'Microsoft.dll')
          $manifest = Join-Path $root 'manifest.json'
          New-WindowsSigningCatalog -Root $root -Patterns @('Owned.dll') -CatalogPath (Join-Path $root 'catalog.txt') -ManifestPath $manifest -PreserveOtherBinaries
          Set-Content -LiteralPath (Join-Path $root 'Microsoft.dll') -Value 'modified'
@@ -138,7 +166,7 @@ Describe 'Signature and distributed-byte gates' `
       {
          $root = Join-Path $TestDrive 'other-publisher'
          New-Item -ItemType Directory -Path $root | Out-Null
-         Set-Content -LiteralPath (Join-Path $root 'Owned.dll') -Value 'already signed'
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination (Join-Path $root 'Owned.dll')
          $script:ProbeSignature.SignerCertificate.SubjectName.Name = 'CN=Other Publisher'
          { New-WindowsSigningCatalog -Root $root -Patterns @('Owned.dll') -CatalogPath (Join-Path $root 'catalog.txt') -ManifestPath (Join-Path $root 'manifest.json') -ExpectedSubject 'CN=Verified Publisher' } | Should -Throw '*another publisher*'
          Test-Path -LiteralPath (Join-Path $root 'catalog.txt') | Should -BeFalse
@@ -150,7 +178,7 @@ Describe 'Signature and distributed-byte gates' `
          $assets = Join-Path $root 'assets'
          $packed = Join-Path $root 'packed'
          New-Item -ItemType Directory -Path $root, $assets, $packed | Out-Null
-         Set-Content -LiteralPath (Join-Path $root 'Owned.dll') -Value 'signed bytes'
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination (Join-Path $root 'Owned.dll')
          $manifest = Join-Path $root 'manifest.json'
          New-WindowsSigningCatalog -Root $root -Patterns @('Owned.dll') -CatalogPath (Join-Path $root 'catalog.txt') -ManifestPath $manifest
          Set-Content -LiteralPath (Join-Path $packed 'Owned.dll') -Value 'modified after signing'
@@ -164,7 +192,7 @@ Describe 'Signature and distributed-byte gates' `
          $assets = Join-Path $root 'assets'
          $packed = Join-Path $root 'packed'
          New-Item -ItemType Directory -Path $root, $assets, $packed | Out-Null
-         Set-Content -LiteralPath (Join-Path $root 'Owned.dll') -Value 'signed bytes'
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination (Join-Path $root 'Owned.dll')
          $manifest = Join-Path $root 'manifest.json'
          New-WindowsSigningCatalog -Root $root -Patterns @('Owned.dll') -CatalogPath (Join-Path $root 'catalog.txt') -ManifestPath $manifest
          Set-Content -LiteralPath (Join-Path $packed 'README.txt') -Value 'no binary'
@@ -184,8 +212,8 @@ Describe 'Signature and distributed-byte gates' `
          $assets = Join-Path $root 'assets'
          $packed = Join-Path $root 'packed'
          New-Item -ItemType Directory -Path "$publish/$Head", $assets, $packed | Out-Null
-         Set-Content -LiteralPath "$publish/$Head/Owned.dll" -Value 'signed app'
-         Set-Content -LiteralPath "$publish/$Head/Microsoft.dll" -Value 'third-party'
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination "$publish/$Head/Owned.dll"
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination "$publish/$Head/Microsoft.dll"
          $manifest = Join-Path $root 'manifest.json'
          New-WindowsSigningCatalog -Root $publish -Patterns @("$Head/Owned.dll") -CatalogPath (Join-Path $root 'catalog.txt') -ManifestPath $manifest -PreserveOtherBinaries
          Copy-Item -LiteralPath "$publish/$Head/Owned.dll" -Destination $packed
@@ -200,10 +228,10 @@ Describe 'Signature and distributed-byte gates' `
          $assets = Join-Path $root 'assets'
          $packed = Join-Path $root 'packed'
          New-Item -ItemType Directory -Path "$publish/app", $assets, $packed | Out-Null
-         Set-Content -LiteralPath "$publish/app/Owned.dll" -Value 'signed app'
-         Set-Content -LiteralPath "$publish/app/Microsoft.dll" -Value 'third-party'
-         Set-Content -LiteralPath "$publish/app/createdump.exe" -Value 'excluded helper'
-         Set-Content -LiteralPath "$publish/app/Owned.vshost.exe" -Value 'excluded host'
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination "$publish/app/Owned.dll"
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination "$publish/app/Microsoft.dll"
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination "$publish/app/createdump.exe"
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination "$publish/app/Owned.vshost.exe"
          $manifest = Join-Path $root 'manifest.json'
          New-WindowsSigningCatalog -Root $publish -Patterns @('app/Owned.dll') -CatalogPath (Join-Path $root 'catalog.txt') -ManifestPath $manifest -PreserveOtherBinaries
          Copy-Item -LiteralPath "$publish/app/Owned.dll", "$publish/app/Microsoft.dll" -Destination $packed
@@ -218,8 +246,8 @@ Describe 'Signature and distributed-byte gates' `
          $assets = Join-Path $root 'assets'
          $packed = Join-Path $root 'packed'
          New-Item -ItemType Directory -Path "$publish/app", $assets, $packed | Out-Null
-         Set-Content -LiteralPath "$publish/app/Owned.dll" -Value 'signed app'
-         Set-Content -LiteralPath "$publish/app/Microsoft.dll" -Value 'third-party'
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination "$publish/app/Owned.dll"
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination "$publish/app/Microsoft.dll"
          $manifest = Join-Path $root 'manifest.json'
          New-WindowsSigningCatalog -Root $publish -Patterns @('app/Owned.dll') -CatalogPath (Join-Path $root 'catalog.txt') -ManifestPath $manifest -PreserveOtherBinaries
          Copy-Item -LiteralPath "$publish/app/Owned.dll" -Destination $packed
@@ -233,7 +261,7 @@ Describe 'Signature and distributed-byte gates' `
          $root = Join-Path $TestDrive 'valid'
          $assets = Join-Path $root 'assets'
          New-Item -ItemType Directory -Path $root, $assets | Out-Null
-         Set-Content -LiteralPath (Join-Path $root 'Owned.dll') -Value 'signed bytes'
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination (Join-Path $root 'Owned.dll')
          $manifest = Join-Path $root 'manifest.json'
          New-WindowsSigningCatalog -Root $root -Patterns @('Owned.dll') -CatalogPath (Join-Path $root 'catalog.txt') -ManifestPath $manifest
          $packed = Join-Path $root 'packed'
@@ -248,8 +276,8 @@ Describe 'Signature and distributed-byte gates' `
          $root = Join-Path $TestDrive 'prefix'
          $assets = Join-Path $root 'assets'
          New-Item -ItemType Directory -Path $root, $assets | Out-Null
-         Set-Content -LiteralPath (Join-Path $root 'Owned.dll') -Value 'signed core'
-         Set-Content -LiteralPath (Join-Path $root 'Owned.Adapter.dll') -Value 'signed adapter'
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination (Join-Path $root 'Owned.dll')
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination (Join-Path $root 'Owned.Adapter.dll')
          $manifest = Join-Path $root 'manifest.json'
          New-WindowsSigningCatalog -Root $root -Patterns @('Owned.dll', 'Owned.Adapter.dll') -CatalogPath (Join-Path $root 'catalog.txt') -ManifestPath $manifest
          foreach($name in @('Owned', 'Owned.Adapter'))
@@ -268,9 +296,11 @@ Describe 'Signature and distributed-byte gates' `
          $publish = Join-Path $root 'publish'
          $assets = Join-Path $root 'assets'
          New-Item -ItemType Directory -Path $assets, "$publish/app/en", "$publish/app/fr" | Out-Null
-         Set-Content -LiteralPath "$publish/app/Owned.dll" -Value 'signed app'
-         Set-Content -LiteralPath "$publish/app/en/Library.resources.dll" -Value 'English'
-         Set-Content -LiteralPath "$publish/app/fr/Library.resources.dll" -Value 'French'
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination "$publish/app/Owned.dll"
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination "$publish/app/en/Library.resources.dll"
+         [IO.File]::AppendAllText("$publish/app/en/Library.resources.dll", 'English')
+         Copy-Item -LiteralPath ([Reflection.PortableExecutable.PEReader].Assembly.Location) -Destination "$publish/app/fr/Library.resources.dll"
+         [IO.File]::AppendAllText("$publish/app/fr/Library.resources.dll", 'French')
          $manifest = Join-Path $root 'manifest.json'
          New-WindowsSigningCatalog -Root $publish -Patterns @('app/Owned.dll') -CatalogPath (Join-Path $root 'catalog.txt') -ManifestPath $manifest -PreserveOtherBinaries
          [IO.Compression.ZipFile]::CreateFromDirectory("$publish/app", (Join-Path $assets 'Owned-Portable.zip'))

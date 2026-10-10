@@ -154,7 +154,10 @@ The Velopack builder accepts required owned names or publish-relative patterns.
 For the starter's CLI variant, the catalog includes `app/Kof22App.exe`,
 `app/Kof22App.dll`, `app/Kof22App.Core.dll`, the three consumed AppKit DLLs and
 `cli/kof22-app.exe`; adapt these to the generated names. The no-CLI variant omits
-the last entry. Preserve all other binary bytes and signatures. The packaging hook
+the last entry. Preserve all other binary bytes and signatures. The catalog gate
+rejects malformed owned or preserved `.exe`/`.dll` inputs before catalog creation;
+unchanged hashes alone cannot prove that the source was executable. MSI/MSIX follow
+their format-specific package/signature checks. The packaging hook
 signs branded Squirrel/execution stubs and the final installer after bundling; final
 verification covers portable/CLI ZIPs, full update packages, installer signatures and
 the installer's embedded full-package hash. Manifests, checksums and attestations

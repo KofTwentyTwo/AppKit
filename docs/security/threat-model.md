@@ -99,6 +99,13 @@ and provenance. The prepared app builder additionally preserves dependency bytes
 verifies Velopack helpers and the installer's embedded full-package payload. These
 controls are prepared locally; Azure and live CI proof are still required.
 
+Owned and preserved `.exe`/`.dll` headers are parsed before creating signing
+catalogs. An already corrupt source could otherwise retain its hash through every
+archive comparison. Regression tests reject malformed owned/dependency inputs,
+retain distinct culture-specific payloads and leave excluded/non-PE package
+formats to their applicable checks. This gate does not establish corruption's
+cause or replace final signature and payload verification.
+
 ## 8. Review log
 
 Generated-input regression coverage for T5 and T6 lives in

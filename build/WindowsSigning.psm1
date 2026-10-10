@@ -70,6 +70,21 @@ function New-WindowsSigningCatalog
          $null = $owned.Add($file.FullName)
       }
    }
+   foreach($file in $binaries | Where-Object { ($PreserveOtherBinaries -or $owned.Contains($_.FullName)) -and $_.Extension -in '.exe', '.dll' })
+   {
+      $stream = [IO.File]::OpenRead($file.FullName)
+      try
+      {
+         $reader = [Reflection.PortableExecutable.PEReader]::new($stream)
+         try
+         {
+            if($null -eq $reader.PEHeaders.PEHeader) { throw 'Missing executable header.' }
+         }
+         finally { $reader.Dispose() }
+      }
+      catch { throw "Invalid published PE binary: $($file.Name). $($_.Exception.Message)" }
+      finally { $stream.Dispose() }
+   }
    $entries = @($binaries | Where-Object { $PreserveOtherBinaries -or $owned.Contains($_.FullName) } | ForEach-Object {
          [ordered]@{
             path         = $_.FullName
