@@ -1,0 +1,26 @@
+# Changelog
+
+Release versions follow [Semantic Versioning](https://semver.org/). All four AppKit
+packages release together. Unreleased changes are listed before tagging; published
+versions retain their original package contents.
+
+## 0.1.0 — 2026-10-10
+
+Initial public release for .NET 10 Windows desktop applications:
+
+- Core package: app identity and paths, build version, settings persistence and repair,
+  activity logs, credential storage, credits, and user interaction abstractions.
+- Updates package: Velopack startup, GitHub release updates, and a shared update
+  coordinator with errors returned to the caller.
+- WinUI and WPF packages: code-built splash, About, and log views; framework adapters
+  for dialogs, theming, window behavior, and crash handling.
+- Runnable WinUI/WPF samples, unit and UI automation tests, full core/update line
+  coverage, and enforced build, formatting, dependency, and security checks.
+- GitHub release assets include NuGet/symbol packages, per-package SBOMs, SHA-256
+  checksums, and signed build provenance. NuGet publishing uses trusted publishing.
+
+This is the first release, so there is no earlier AppKit version to upgrade from.
+The UI packages and Windows credential backend require Windows; see README for
+package-specific target frameworks and setup.
+
+[GitHub release](https://github.com/KofTwentyTwo/AppKit/releases/tag/v0.1.0)
