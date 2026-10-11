@@ -25,6 +25,10 @@
             <MenuItem x:Name="SplashToggle" Header="Show splash at startup" IsCheckable="True" Click="Splash_Click" />
          </MenuItem>
          <MenuItem Header="_Help">
+            <MenuItem Header="View on _GitHub" AutomationProperties.AutomationId="MenuGitHub" Click="GitHub_Click" />
+            <MenuItem Header="Submit an _issue…" AutomationProperties.AutomationId="MenuSubmitIssue" ToolTip="Report a bug or request a feature on GitHub" Click="SubmitIssue_Click" />
+            <MenuItem Header="Community _support…" AutomationProperties.AutomationId="MenuCommunitySupport" ToolTip="Ask a question or share tips in GitHub Discussions" Click="CommunitySupport_Click" />
+            <Separator />
             <MenuItem x:Name="CheckForUpdatesMenuItem" Header="Check for _updates" Click="CheckForUpdates_Click" />
             <MenuItem x:Name="ActivityLogMenuItem" Header="Activity _log" Click="ActivityLog_Click" />
             <Separator />

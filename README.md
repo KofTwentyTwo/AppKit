@@ -53,6 +53,12 @@ its build targets) and copies its brand assets (`Assets/Brand/app-icon.svg`,
 
 ## Usage
 
+The default sample/starter Help menus include **View on GitHub**,
+**Submit an issue…** and **Community support…**, matching gclo. Derive the issue
+chooser (`/issues/new/choose`) and Discussions (`/discussions`) from the app's
+`AppInfo.RepositoryUrl`; enable GitHub Discussions during repository setup.
+Both WinUI and WPF samples show the wiring without requiring a new AppKit API.
+
 New apps should start from the KofTwentyTwo Windows app template, which has everything
 below in place; the design is the
 [Windows desktop reference architecture](https://github.com/KofTwentyTwo/standards/blob/main/architecture/windows-desktop-app.md).

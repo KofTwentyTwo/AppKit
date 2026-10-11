@@ -28,6 +28,25 @@ public class SampleAppTests
 
 
 
+   /// <summary>The real Help menu exposes the app's repository, issue reporting and community commands without launching a browser.</summary>
+   [Theory]
+   [InlineData(SampleKind.WinUI)]
+   [InlineData(SampleKind.Wpf)]
+   public void Help_PublicDestinations_AreAvailableInTheNativeMenu(SampleKind kind)
+   {
+      using var session = new AppSession(kind);
+      _ = session.OpenMenuItem("Help", "MenuGitHub");
+      foreach((string identity, string label) in new[] { ("MenuGitHub", "GitHub"), ("MenuSubmitIssue", "issue"), ("MenuCommunitySupport", "support") })
+      {
+         AutomationElement item = session.WaitForElement(identity);
+         Assert.True(item.IsEnabled);
+         Assert.False(item.IsOffscreen);
+         Assert.Contains(label, item.Name, StringComparison.OrdinalIgnoreCase);
+      }
+   }
+
+
+
    /// <summary>About: shows the build version.</summary>
    [Theory]
    [InlineData(SampleKind.WinUI)]
