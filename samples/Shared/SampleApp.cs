@@ -36,5 +36,17 @@ internal static class SampleApp
 
    public static AppPaths Paths { get; } = new(Info);
 
+
+
+   /// <summary>The app's bug/feature templates, independent of any upstream project credited in About.</summary>
+   public static Uri IssuesUrl { get; } = new(Info.RepositoryUrl!.AbsoluteUri.TrimEnd('/') + "/issues/new/choose");
+
+
+
+   /// <summary>Community questions and tips in the app's own repository.</summary>
+   public static Uri SupportUrl { get; } = new(Info.RepositoryUrl!.AbsoluteUri.TrimEnd('/') + "/discussions");
+
+
+
    public static SettingsStore<SampleSettings> SettingsStore { get; } = new(Paths.SettingsFile, SampleSettingsContext.Default.SampleSettings);
 }
