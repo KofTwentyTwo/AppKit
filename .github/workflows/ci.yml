@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   ci:
-    uses: KofTwentyTwo/standards/.github/workflows/dotnet.yml@ae3df7af77e5a97df231a9f53be9d8ed785ddce5 # main (pre-release)
+    uses: KofTwentyTwo/standards/.github/workflows/dotnet.yml@70b555bd5658273090769991bfc4c9b6681dde18 # main (pre-release)
     permissions:
       contents: read # check out, build, and test; nothing is written
     with:
