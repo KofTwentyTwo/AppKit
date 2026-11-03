@@ -1,0 +1,19 @@
+name: windows6218-appkit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  appkit-native-qualification:
+    uses: self:KofTwentyTwo/platform-ci/.gitea/workflows/dotnet.yaml@d920ee6d25584b325af17c3e05f39a7fafe2990b
+    with:
+      coverage-packages: KofTwentyTwo.AppKit,KofTwentyTwo.AppKit.Updates
+      format-projects: samples/AppKit.Sample.WinUI/AppKit.Sample.WinUI.csproj
+      native-runner: kof-windows-vm6218
+      platform: x64
+      runner: linux-small
+      solution: AppKit.slnx
+      test-projects: tests/KofTwentyTwo.AppKit.Tests
