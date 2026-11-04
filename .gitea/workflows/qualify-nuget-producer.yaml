@@ -26,7 +26,7 @@ jobs:
       with:
         persist-credentials: false
     - name: Set up original declared SDK
-      uses: self:KofTwentyTwo/platform-ci/kof-release-sdk@b3ea39f6d767d9fb273acd3b92f271451630789e
+      uses: self:KofTwentyTwo/platform-ci/kof-release-sdk@db544547209c11f6ff637d75ec4c535b3dd2dbb7
     - name: Read the verbatim source-declared version
       id: source-version
       shell: pwsh
@@ -47,7 +47,7 @@ jobs:
 
         '
     - name: Original readonly build/test/pack
-      uses: self:KofTwentyTwo/platform-ci/nuget-build@506e42d5951ff8cf16dfa9d4b2297dbf658d24ea
+      uses: self:KofTwentyTwo/platform-ci/nuget-build@b41f248102d62fa1f656f59a529d7314efc339b2
       with:
         target: appkit
         version: ${{ steps.source-version.outputs.version }}
