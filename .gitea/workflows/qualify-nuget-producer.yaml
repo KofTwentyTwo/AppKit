@@ -1,0 +1,53 @@
+name: Original readonly NuGet producer qualification
+'on':
+  workflow_dispatch: {}
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build-test-pack:
+    name: build
+    runs-on: kof-windows-vm6218
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
+    env:
+      K22_SOLUTION: AppKit.slnx
+      K22_PLATFORM: x64
+      TEST_PROJECTS: tests/KofTwentyTwo.AppKit.Tests
+      COVERAGE_PACKAGES: KofTwentyTwo.AppKit,KofTwentyTwo.AppKit.Updates
+      COVERAGE_MINIMUM: '100'
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+    steps:
+    - name: Checkout
+      uses: builtin:checkout
+      with:
+        persist-credentials: false
+    - name: Set up original declared SDK
+      uses: self:KofTwentyTwo/platform-ci/kof-release-sdk@b3ea39f6d767d9fb273acd3b92f271451630789e
+    - name: Read the verbatim source-declared version
+      id: source-version
+      shell: pwsh
+      run: '$ErrorActionPreference = ''Stop''
+
+        $version = dotnet msbuild src/KofTwentyTwo.AppKit/KofTwentyTwo.AppKit.csproj
+        -nologo -getProperty:Version
+
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+        $version = ($version | Out-String).Trim()
+
+        if ($version -notmatch ''^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$'') { throw ''Unexpected
+        source-declared version output'' }
+
+        "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding
+        utf8
+
+        '
+    - name: Original readonly build/test/pack
+      uses: self:KofTwentyTwo/platform-ci/nuget-build@506e42d5951ff8cf16dfa9d4b2297dbf658d24ea
+      with:
+        target: appkit
+        version: ${{ steps.source-version.outputs.version }}
