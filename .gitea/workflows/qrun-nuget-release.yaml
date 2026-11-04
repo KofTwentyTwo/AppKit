@@ -1,0 +1,14 @@
+name: Original AppKit NuGet release
+'on':
+  push:
+    tags:
+    - v*
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: release
+  cancel-in-progress: false
+jobs:
+  release:
+    uses: self:KofTwentyTwo/platform-ci/.gitea/workflows/kof-appkit-nuget-release.yaml@kof-release-v1
