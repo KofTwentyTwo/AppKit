@@ -1,0 +1,22 @@
+name: build
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+jobs:
+  windows:
+    uses: self:KofTwentyTwo/ci-workflows/.gitea/workflows/windows.yaml@native-workflows
+    secrets: inherit
+    with:
+      commands: |
+        dotnet restore AppKit.slnx -p:Platform=x64 --locked-mode
+        dotnet build AppKit.slnx -p:Platform=x64 -warnaserror --no-restore
+        # The WinUI sample is built directly so the format workspace can load its generated XAML code.
+        dotnet build samples/AppKit.Sample.WinUI/AppKit.Sample.WinUI.csproj -p:Platform=x64 -warnaserror --no-restore
+        $env:Platform = 'x64'
+        dotnet format AppKit.slnx --verify-no-changes --severity warn --no-restore
+        Remove-Item Env:Platform
+        dotnet test tests/KofTwentyTwo.AppKit.Tests --no-build --settings coverage.runsettings --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
+        ./build/Assert-Coverage.ps1 -ResultsDirectory TestResults -Packages KofTwentyTwo.AppKit,KofTwentyTwo.AppKit.Updates
+        dotnet pack AppKit.slnx -c Release -p:Platform=x64 -o artifacts/nuget
+      artifacts: artifacts/nuget/*.nupkg
